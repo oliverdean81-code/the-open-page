@@ -78,7 +78,7 @@ $('connectBtn').addEventListener('click',async()=>{
 });
 (async()=>{
  const url='https://cqdtodyknixyhbcmgrxh.supabase.co';
- const key='sb_publishable_arlnZNY8-D3A-bVZ8Qx04w_3PtFlEX3';
+ const key='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxZHRvZHlrbml4eWhiY21ncnhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUxOTY2MTMsImV4cCI6MjExMDc3MjYxM30.4MMJAMELPrA5idvZ4bP4ssYklWlmhAN_EarRAleVDcU';
  $('projectUrl').value=url;$('anonKey').value=key;
  try{await connectWorkspace(url,key)}catch(e){show('setup');message('setupMsg','Could not connect to the teaching database: '+e.message)}
 })();
