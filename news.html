@@ -111,6 +111,13 @@ footer {
   .levels { grid-template-columns: 1fr; }
 }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+.published-lesson { background:white; padding:24px; border-radius:5px; margin:18px 0; border-left:4px solid var(--gold); }
+.published-lesson h3 { color:var(--green); margin-top:0; }
+.lesson-content { white-space:pre-wrap; }
+.lesson-status { color:#777; font-style:italic; }
+</style>
 </head>
 <body>
 
@@ -159,7 +166,7 @@ footer {
     <h2>B1 – Intermediate</h2>
     <div class="lesson">
       <h3>News Lessons</h3>
-      <p class="placeholder">Your B1 news articles and lessons will appear here.</p>
+      <div id="b1-lessons"><p class="placeholder">Loading published B1 lessons…</p></div>
       <ul>
         <li>Article and reading text</li>
         <li>Key vocabulary and definitions</li>
@@ -175,7 +182,7 @@ footer {
     <h2>B2 – Upper Intermediate</h2>
     <div class="lesson">
       <h3>News Lessons</h3>
-      <p class="placeholder">Your B2 news articles and lessons will appear here.</p>
+      <div id="b2-lessons"><p class="placeholder">Loading published B2 lessons…</p></div>
       <ul>
         <li>Article and reading text</li>
         <li>Key vocabulary and definitions</li>
@@ -191,7 +198,7 @@ footer {
     <h2>C1 – Advanced</h2>
     <div class="lesson">
       <h3>News Lessons</h3>
-      <p class="placeholder">Your C1 news articles and lessons will appear here.</p>
+      <div id="c1-lessons"><p class="placeholder">Loading published C1 lessons…</p></div>
       <ul>
         <li>In-depth articles and analysis</li>
         <li>Advanced vocabulary and expressions</li>
@@ -210,5 +217,45 @@ footer {
   Read. Discover. Think. Express.
 </footer>
 
+
+<script>
+const NEWS_PROJECT_URL='https://cqdtodyknixyhbcmgrxh.supabase.co';
+const NEWS_PUBLISHABLE_KEY='sb_publishable_arlnZNY8-D3A-bVZ8Qx04w_3PtFIEX3';
+const newsClient=window.supabase.createClient(NEWS_PROJECT_URL,NEWS_PUBLISHABLE_KEY);
+function addText(parent,tag,value,className){
+ const el=document.createElement(tag);el.textContent=value||'';if(className)el.className=className;parent.appendChild(el);return el;
+}
+function showNewsLesson(lesson,target){
+ const card=document.createElement('article');card.className='published-lesson';
+ addText(card,'h3',lesson.title);
+ if(lesson.summary)addText(card,'p',lesson.summary);
+ if(lesson.video_url){
+  const link=document.createElement('a');link.href=lesson.video_url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Watch lesson video';card.appendChild(link);
+ }
+ if(lesson.lesson_content)addText(card,'div',lesson.lesson_content,'lesson-content');
+ target.appendChild(card);
+}
+async function loadPublishedNews(){
+ const targets={B1:document.getElementById('b1-lessons'),B2:document.getElementById('b2-lessons'),C1:document.getElementById('c1-lessons')};
+ try{
+  const {data,error}=await newsClient.from('lessons')
+   .select('id,title,summary,lesson_content,video_url,levels!inner(code),learning_areas!inner(slug)')
+   .eq('status','published').eq('learning_areas.slug','news')
+   .order('created_at',{ascending:false});
+  if(error)throw error;
+  Object.values(targets).forEach(el=>el.innerHTML='');
+  (data||[]).forEach(lesson=>{
+   const level=lesson.levels?.code;
+   if(targets[level])showNewsLesson(lesson,targets[level]);
+  });
+  Object.entries(targets).forEach(([level,target])=>{
+   if(!target.children.length)addText(target,'p','No published lessons at this level yet.','placeholder');
+  });
+ }catch(error){
+  Object.values(targets).forEach(el=>{el.innerHTML='';addText(el,'p','Lessons could not be loaded: '+error.message,'placeholder')});
+ }
+}
+loadPublishedNews();
+</script>
 </body>
 </html>
