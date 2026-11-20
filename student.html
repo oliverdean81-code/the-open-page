@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Student Login | The Open Page</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--green:#344b3d;--gold:#b39a68;--cream:#f7f4ec;--ink:#30352f}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font:16px/1.6 Georgia,serif}
+header{background:var(--green);color:white;padding:22px 7%;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.brand{font-size:23px;letter-spacing:2px}.brand small{display:block;font-size:12px;letter-spacing:1px}
+nav a{color:white;text-decoration:none;margin-left:18px}
+main{max-width:760px;margin:55px auto;padding:0 20px}.panel{background:white;border:1px solid #e2ddcf;border-radius:10px;padding:30px;box-shadow:0 5px 20px #26352d0c}
+h1,h2{color:var(--green);font-weight:normal}h1{font-size:34px;margin-top:0}
+p{line-height:1.8}.muted{color:#687067;font-size:14px}
+label{display:block;font:600 14px Arial,sans-serif;margin:15px 0 6px}
+input{width:100%;padding:13px;border:1px solid #cfc9bc;border-radius:6px;font:16px Arial,sans-serif}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+button{background:var(--green);color:white;border:0;border-radius:6px;padding:12px 19px;font:600 14px Arial,sans-serif;cursor:pointer}
+button.secondary{background:#e9e5db;color:var(--green)}
+.status{background:#f1eee6;padding:12px;border-radius:6px;margin-top:16px;font:14px Arial,sans-serif}
+.hidden{display:none!important}.links{display:flex;gap:18px;flex-wrap:wrap;margin-top:20px}.links a{color:var(--green)}
+@media(max-width:600px){header{justify-content:center;text-align:center}nav a{margin:0 8px}}
+</style>
+</head>
+<body>
+<header><div class="brand">THE OPEN PAGE<small>English Through Literature</small></div><nav><a href="index.html">Home</a><a href="news.html">News</a><a href="about.html">About</a></nav></header>
+<main>
+<section class="panel" id="authPanel">
+<h1>Welcome to The Open Page</h1>
+<p>Sign in to your student account, or create an account to begin exploring English through news, short stories and poetry.</p>
+<p class="muted">Student accounts are free. Use an email address you can access, as you may need to confirm it before signing in.</p>
+<label for="email">Email address</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com">
+<label for="password">Password</label><input id="password" type="password" autocomplete="current-password" placeholder="At least 6 characters">
+<div class="actions"><button id="signIn">Sign in</button><button id="signUp" class="secondary">Create student account</button></div>
+<div class="status" id="message" role="status">Choose Sign in or Create student account.</div>
+</section>
+<section class="panel hidden" id="welcome">
+<h1>You're signed in</h1><p>Welcome to The Open Page. Choose an area to begin learning.</p>
+<div class="links"><a href="news.html">English Through the News</a><a href="stories.html">Short Stories</a><a href="poetry.html">Poetry</a></div>
+<div class="actions"><button id="signOut" class="secondary">Sign out</button></div>
+</section>
+</main>
+<script>
+const PROJECT_URL='https://cqd todyknixyhbcmgrxh.supabase.co'.replace(' ','');
+const PUBLISHABLE_KEY='sb_publishable_arlnZNY8-D3A-bVZ8Qx04w_3PtFIEX3';
+const client=window.supabase.createClient(PROJECT_URL,PUBLISHABLE_KEY);
+const $=id=>document.getElementById(id);
+function status(t){$('message').textContent=t}
+function signedIn(){ $('authPanel').classList.add('hidden');$('welcome').classList.remove('hidden') }
+$('signIn').addEventListener('click',async()=>{
+ const email=$('email').value.trim(),password=$('password').value;
+ if(!email||!password){status('Please enter your email and password.');return}
+ status('Signing in…');const {error}=await client.auth.signInWithPassword({email,password});
+ if(error){status(error.message);return}signedIn()
+});
+$('signUp').addEventListener('click',async()=>{
+ const email=$('email').value.trim(),password=$('password').value;
+ if(!email||!password){status('Please enter your email and choose a password.');return}
+ if(password.length<6){status('Please choose a password with at least 6 characters.');return}
+ status('Creating your student account…');const {data,error}=await client.auth.signUp({email,password});
+ if(error){status(error.message);return}
+ if(data.session){signedIn()}else{status('Your account has been created. Please check your email for a confirmation link, then return here to sign in.')}
+});
+$('signOut').addEventListener('click',async()=>{await client.auth.signOut();$('welcome').classList.add('hidden');$('authPanel').classList.remove('hidden');status('You have signed out.')});
+client.auth.getSession().then(({data})=>{if(data.session)signedIn()});
+</script>
+</body>
+</html>
