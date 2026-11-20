@@ -21,7 +21,7 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 <body>
 <header><h1>The Open Page</h1><p>Teacher Dashboard · English Through Literature</p></header>
 <main>
-<section id="setup" class="panel">
+<section id="setup" class="panel hidden">
 <h2>Connect your teaching workspace</h2>
 <p class="muted">This private dashboard connects to your separate The Open Page Supabase project. Add the project's public URL and anon/publishable key below. Never use a service_role or secret key here.</p>
 <label for="projectUrl">Supabase Project URL</label><input id="projectUrl" placeholder="https://your-project.supabase.co">
@@ -35,7 +35,7 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 <div class="actions"><button id="loginBtn">Sign in</button></div><div id="loginMsg" class="status"></div>
 </section>
 <section id="dashboard" class="hidden">
-<div class="panel"><div class="actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 style="margin:0">Your lessons</h2><div class="actions"><a href="index.html" style="display:inline-block;text-decoration:none;border-radius:7px;padding:12px 18px;background:var(--green);color:white;font:600 14px Arial,sans-serif">View website</a><button id="settingsBtn" class="secondary">Connection settings</button><button id="signOutBtn" class="secondary">Sign out</button></div></div><p class="muted">Only lessons you publish will be visible to students.</p><div id="lessonList"></div><button id="newLessonBtn" class="gold">Create a new lesson</button></div>
+<div class="panel"><div class="actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 style="margin:0">Your lessons</h2><div class="actions"><a href="index.html" style="display:inline-block;text-decoration:none;border-radius:7px;padding:12px 18px;background:var(--green);color:white;font:600 14px Arial,sans-serif">View website</a><button id="signOutBtn" class="secondary">Sign out</button></div></div><p class="muted">Only lessons you publish will be visible to students.</p><div id="lessonList"></div><button id="newLessonBtn" class="gold">Create a new lesson</button></div>
 <div class="panel" id="editor">
 <h2 id="editorHeading">Create a lesson</h2>
 <input id="lessonId" type="hidden">
@@ -77,8 +77,10 @@ $('connectBtn').addEventListener('click',async()=>{
  catch(e){message('setupMsg','Connection error: '+e.message)}
 });
 (async()=>{
- const url=localStorage.getItem('openPageSupabaseUrl'),key=localStorage.getItem('openPageSupabaseKey');
- if(url&&key){$('projectUrl').value=url;$('anonKey').value=key;try{await connectWorkspace(url,key)}catch(e){show('setup');message('setupMsg','Could not reconnect: '+e.message)}}
+ const url='https://cqd todyknixyhbcmgrxh.supabase.co'.replace(' ','');
+ const key='sb_publishable_arlnZNY8-D3A-bVZ8Qx04w_3PtFIEX3';
+ $('projectUrl').value=url;$('anonKey').value=key;
+ try{await connectWorkspace(url,key)}catch(e){show('setup');message('setupMsg','Could not connect: '+e.message)}
 })();
 $('loginBtn').addEventListener('click',async()=>{
  message('loginMsg','Signing in…');const {data,error}=await supabaseClient.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
@@ -89,7 +91,7 @@ async function enterDashboard(){
  if(error||data!==true){await supabaseClient.auth.signOut();message('loginMsg','Teacher access check failed: '+(error?.message||'The database did not confirm teacher access.'));return}
  show('loginPanel',false);show('setup',false);show('dashboard');await loadLessons()
 }
-$('settingsBtn').addEventListener('click',()=>{show('setup');$('setup').scrollIntoView({behavior:'smooth'})});
+
 $('signOutBtn').addEventListener('click',async()=>{await supabaseClient.auth.signOut();currentUser=null;show('dashboard',false);show('loginPanel')});
 $('newLessonBtn').addEventListener('click',()=>{resetEditor();$('editor').scrollIntoView({behavior:'smooth'})});
 $('cancelBtn').addEventListener('click',resetEditor);
