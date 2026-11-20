@@ -64,7 +64,7 @@ function message(id,text){$(id).textContent=text}
 function show(id,on=true){$(id).classList.toggle('hidden',!on)}
 function safeSlug(s){return s.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
 $('connectBtn').addEventListener('click',async()=>{
- const url=$('projectUrl').value.trim(),key=$('anonKey').value.trim();
+ const url=$('projectUrl').value.trim().replace(/\\/rest\\/v1\\/?$/i,'').replace(/\\/$/,'');const key=$('anonKey').value.trim();
  if(!url||!key){message('setupMsg','Please enter both connection details.');return}
  try{supabaseClient=window.supabase.createClient(url,key);const {data:{session},error}=await supabaseClient.auth.getSession();if(error)throw error;
  show('loginPanel');message('setupMsg','Connected to Supabase. Now sign in as the teacher.');if(session){currentUser=session.user;await enterDashboard()}
