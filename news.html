@@ -238,21 +238,27 @@ function showNewsLesson(lesson,target){
 async function loadPublishedNews(){
  const targets={B1:document.getElementById('b1-lessons'),B2:document.getElementById('b2-lessons'),C1:document.getElementById('c1-lessons')};
  try{
-  const {data,error}=await newsClient.from('lessons')
-   .select('id,title,summary,lesson_content,video_url,levels!inner(code),learning_areas!inner(slug)')
-   .eq('status','published').eq('learning_areas.slug','news')
-   .order('created_at',{ascending:false});
-  if(error)throw error;
+  const {data:lessons,error:lessonError}=await newsClient.from('lessons')
+   .select('id,title,summary,lesson_content,video_url,area_id,level_id,status')
+   .eq('status','published');
+  if(lessonError)throw new Error('Lessons: '+lessonError.message);
+  const {data:areas,error:areaError}=await newsClient.from('learning_areas').select('id,slug');
+  if(areaError)throw new Error('Learning areas: '+areaError.message);
+  const {data:levels,error:levelError}=await newsClient.from('levels').select('id,code');
+  if(levelError)throw new Error('Levels: '+levelError.message);
+  const newsArea=areas.find(a=>a.slug==='news');
+  if(!newsArea)throw new Error('The News learning area was not found (expected slug: news).');
   Object.values(targets).forEach(el=>el.innerHTML='');
-  (data||[]).forEach(lesson=>{
-   const level=lesson.levels?.code;
+  const newsLessons=(lessons||[]).filter(l=>String(l.area_id)===String(newsArea.id));
+  newsLessons.forEach(lesson=>{
+   const level=levels.find(item=>String(item.id)===String(lesson.level_id))?.code;
    if(targets[level])showNewsLesson(lesson,targets[level]);
   });
   Object.entries(targets).forEach(([level,target])=>{
    if(!target.children.length)addText(target,'p','No published lessons at this level yet.','placeholder');
   });
  }catch(error){
-  Object.values(targets).forEach(el=>{el.innerHTML='';addText(el,'p','Lessons could not be loaded: '+error.message,'placeholder')});
+  Object.values(targets).forEach(el=>{el.innerHTML='';addText(el,'p','We could not load lessons: '+error.message,'placeholder')});
  }
 }
 loadPublishedNews();
