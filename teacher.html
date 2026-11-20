@@ -63,13 +63,23 @@ const $=id=>document.getElementById(id);
 function message(id,text){$(id).textContent=text}
 function show(id,on=true){$(id).classList.toggle('hidden',!on)}
 function safeSlug(s){return s.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
+async function connectWorkspace(url,key){
+ supabaseClient=window.supabase.createClient(url,key);
+ const {data:{session},error}=await supabaseClient.auth.getSession();if(error)throw error;
+ show('setup',false);
+ if(session){currentUser=session.user;await enterDashboard()}
+ else{show('loginPanel');message('setupMsg','Connected to Supabase. Now sign in as the teacher.')}
+}
 $('connectBtn').addEventListener('click',async()=>{
  const url=$('projectUrl').value.trim().replace(/\/rest\/v1\/?$/i,'').replace(/\/$/,'');const key=$('anonKey').value.trim();
  if(!url||!key){message('setupMsg','Please enter both connection details.');return}
- try{supabaseClient=window.supabase.createClient(url,key);const {data:{session},error}=await supabaseClient.auth.getSession();if(error)throw error;
- show('setup',false);show('loginPanel');message('setupMsg','Connected to Supabase. Now sign in as the teacher.');if(session){currentUser=session.user;await enterDashboard()}
- }catch(e){message('setupMsg','Connection error: '+e.message)}
+ try{localStorage.setItem('openPageSupabaseUrl',url);localStorage.setItem('openPageSupabaseKey',key);await connectWorkspace(url,key)}
+ catch(e){message('setupMsg','Connection error: '+e.message)}
 });
+(async()=>{
+ const url=localStorage.getItem('openPageSupabaseUrl'),key=localStorage.getItem('openPageSupabaseKey');
+ if(url&&key){$('projectUrl').value=url;$('anonKey').value=key;try{await connectWorkspace(url,key)}catch(e){show('setup');message('setupMsg','Could not reconnect: '+e.message)}}
+})();
 $('loginBtn').addEventListener('click',async()=>{
  message('loginMsg','Signing in…');const {data,error}=await supabaseClient.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
  if(error){message('loginMsg','Sign-in failed: '+error.message);return}currentUser=data.user;await enterDashboard()
