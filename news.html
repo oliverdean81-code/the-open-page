@@ -118,6 +118,9 @@ footer {
 .lesson-content { white-space:pre-wrap; }
 .lesson-status { color:#777; font-style:italic; }
 </style>
+<style>
+.lesson-title-link{color:var(--green);font-size:24px;font-weight:bold;text-decoration:none}.lesson-title-link:hover{text-decoration:underline;color:var(--gold)}
+</style>
 </head>
 <body>
 
@@ -227,19 +230,15 @@ function addText(parent,tag,value,className){
 }
 function showNewsLesson(lesson,target){
  const card=document.createElement('article');card.className='published-lesson';
- addText(card,'h3',lesson.title);
+ const link=document.createElement('a');link.href='lesson.html?slug='+encodeURIComponent(lesson.slug);link.textContent=lesson.title;link.className='lesson-title-link';card.appendChild(link);
  if(lesson.summary)addText(card,'p',lesson.summary);
- if(lesson.video_url){
-  const link=document.createElement('a');link.href=lesson.video_url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Watch lesson video';card.appendChild(link);
- }
- if(lesson.lesson_content)addText(card,'div',lesson.lesson_content,'lesson-content');
  target.appendChild(card);
 }
 async function loadPublishedNews(){
  const targets={B1:document.getElementById('b1-lessons'),B2:document.getElementById('b2-lessons'),C1:document.getElementById('c1-lessons')};
  try{
   const {data:lessons,error:lessonError}=await newsClient.from('lessons')
-   .select('id,title,summary,lesson_content,video_url,area_id,level_id,status')
+   .select('id,title,slug,summary,area_id,level_id,status')
    .eq('status','published');
   if(lessonError)throw new Error('Lessons: '+lessonError.message);
   const {data:areas,error:areaError}=await newsClient.from('learning_areas').select('id,slug');
