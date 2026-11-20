@@ -32,7 +32,7 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 <h2>Teacher sign in</h2><p class="muted">Sign in with the teacher email address and password you created in Supabase Authentication.</p>
 <label for="email">Email</label><input id="email" type="email" autocomplete="username">
 <label for="password">Password</label><input id="password" type="password" autocomplete="current-password">
-<div class="actions"><button id="loginBtn">Sign in</button></div><div id="loginMsg" class="status"></div>
+<div class="actions"><button id="loginBtn">Sign in</button></div><p class="muted"><a href="#" id="forgotPassword">Forgot your password?</a></p><div id="loginMsg" class="status"></div>
 </section>
 <section id="dashboard" class="hidden">
 <div class="panel"><div class="actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 style="margin:0">Your lessons</h2><div class="actions"><a href="index.html" style="display:inline-block;text-decoration:none;border-radius:7px;padding:12px 18px;background:var(--green);color:white;font:600 14px Arial,sans-serif">View website</a><button id="signOutBtn" class="secondary">Sign out</button></div></div><p class="muted">Only lessons you publish will be visible to students.</p><div id="lessonList"></div><button id="newLessonBtn" class="gold">Create a new lesson</button></div>
@@ -82,7 +82,7 @@ $('connectBtn').addEventListener('click',async()=>{
  $('projectUrl').value=url;$('anonKey').value=key;
  try{await connectWorkspace(url,key)}catch(e){show('setup');message('setupMsg','Could not connect to the teaching database: '+e.message)}
 })();
-$('loginBtn').addEventListener('click',async()=>{
+$('forgotPassword').addEventListener('click',async(e)=>{\n e.preventDefault();const email=$('email').value.trim();if(!email){message('loginMsg','Please enter your teacher email address first, then click Forgot your password?');return}\n message('loginMsg','Sending password reset email…');const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/reset-password.html'});\n if(error){message('loginMsg','Could not send reset email: '+error.message);return}message('loginMsg','Password reset email sent. Check your inbox and follow the link to choose a new password.');\n});\n$('loginBtn').addEventListener('click',async()=>{
  message('loginMsg','Signing in…');const {data,error}=await supabaseClient.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
  if(error){message('loginMsg','Sign-in failed: '+error.message);return}currentUser=data.user;await enterDashboard()
 });
