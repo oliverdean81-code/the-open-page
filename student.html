@@ -33,7 +33,7 @@ button.secondary{background:#e9e5db;color:var(--green)}
 <p class="muted">Student accounts are free. Use an email address you can access, as you may need to confirm it before signing in.</p>
 <label for="email">Email address</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com">
 <label for="password">Password</label><input id="password" type="password" autocomplete="current-password" placeholder="At least 6 characters">
-<div class="actions"><button id="signIn">Sign in</button><button id="signUp" class="secondary">Create student account</button></div>
+<div class="actions"><button id="signIn">Sign in</button><button id="signUp" class="secondary">Create student account</button></div><p class="muted"><a href="#" id="forgotPassword">Forgot your password?</a></p>
 <div class="status" id="message" role="status">Choose Sign in or Create student account.</div>
 </section>
 <section class="panel hidden" id="welcome">
@@ -43,8 +43,8 @@ button.secondary{background:#e9e5db;color:var(--green)}
 </section>
 </main>
 <script>
-const PROJECT_URL='https://cqd todyknixyhbcmgrxh.supabase.co'.replace(' ','');
-const PUBLISHABLE_KEY='sb_publishable_arlnZNY8-D3A-bVZ8Qx04w_3PtFIEX3';
+const PROJECT_URL='https://cqdtodyknixyhbcmgrxh.supabase.co';
+const PUBLISHABLE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxZHRvZHlrbml4eWhiY21ncnhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUxOTY2MTMsImV4cCI6MjExMDc3MjYxM30.4MMJAMELPrA5idvZ4bP4ssYklWlmhAN_EarRAleVDcU';
 const client=window.supabase.createClient(PROJECT_URL,PUBLISHABLE_KEY);
 const $=id=>document.getElementById(id);
 function status(t){$('message').textContent=t}
@@ -55,7 +55,7 @@ $('signIn').addEventListener('click',async()=>{
  status('Signing in…');const {error}=await client.auth.signInWithPassword({email,password});
  if(error){status(error.message);return}signedIn()
 });
-$('signUp').addEventListener('click',async()=>{
+$('forgotPassword').addEventListener('click',async(e)=>{\n e.preventDefault();const email=$('email').value.trim();if(!email){status('Please enter your email address first, then click Forgot your password?');return}\n status('Sending password reset email…');const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/reset-password.html'});\n if(error){status('Could not send reset email: '+error.message);return}status('Password reset email sent. Please check your inbox and follow the link to choose a new password.');\n});\n$('signUp').addEventListener('click',async()=>{
  const email=$('email').value.trim(),password=$('password').value;
  if(!email||!password){status('Please enter your email and choose a password.');return}
  if(password.length<6){status('Please choose a password with at least 6 characters.');return}
