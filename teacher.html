@@ -75,8 +75,8 @@ $('loginBtn').addEventListener('click',async()=>{
  if(error){message('loginMsg','Sign-in failed: '+error.message);return}currentUser=data.user;await enterDashboard()
 });
 async function enterDashboard(){
- const {data,error}=await supabaseClient.from('admin_users').select('user_id').eq('user_id',currentUser.id).maybeSingle();
- if(error||!data){await supabaseClient.auth.signOut();message('loginMsg','This account does not have teacher access. Check that its user ID is listed in admin_users.');return}
+ const {data,error}=await supabaseClient.rpc('is_teacher');
+ if(error||data!==true){await supabaseClient.auth.signOut();message('loginMsg','Teacher access check failed: '+(error?.message||'The database did not confirm teacher access.'));return}
  show('loginPanel',false);show('dashboard');await loadLessons()
 }
 $('signOutBtn').addEventListener('click',async()=>{await supabaseClient.auth.signOut();currentUser=null;show('dashboard',false);show('loginPanel')});
