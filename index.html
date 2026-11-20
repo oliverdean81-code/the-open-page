@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Open Page | English Through Literature</title>
+<style>
+:root {
+  --green: #344b3d;
+  --gold: #b39a68;
+  --cream: #f7f4ec;
+  --ink: #30352f;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Georgia, serif;
+  color: var(--ink);
+  background: var(--cream);
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 22px 7%;
+  background: #fffdf8;
+}
+.logo {
+  color: var(--green);
+  font-size: 25px;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+nav a {
+  color: var(--green);
+  text-decoration: none;
+  margin-left: 24px;
+  font-size: 15px;
+}
+nav a:hover { color: var(--gold); }
+.hero {
+  text-align: center;
+  padding: 100px 20px;
+  background: var(--green);
+  color: white;
+}
+.hero .eyebrow {
+  color: #ddc99d;
+  letter-spacing: 4px;
+  font-size: 13px;
+}
+.hero h1 {
+  font-size: clamp(38px, 6vw, 68px);
+  font-weight: normal;
+  margin: 25px 0 15px;
+}
+.hero p {
+  font-size: 19px;
+  line-height: 1.8;
+  max-width: 650px;
+  margin: 0 auto 30px;
+}
+.hero a {
+  display: inline-block;
+  background: #c6ae7d;
+  color: #25382d;
+  padding: 15px 30px;
+  text-decoration: none;
+  border-radius: 3px;
+}
+.intro {
+  max-width: 850px;
+  margin: auto;
+  padding: 75px 25px 35px;
+  text-align: center;
+}
+h2 {
+  color: var(--green);
+  font-size: 34px;
+  font-weight: normal;
+}
+.intro p {
+  font-size: 18px;
+  line-height: 1.9;
+}
+.courses {
+  padding: 35px 7% 85px;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 25px;
+  max-width: 1150px;
+  margin: 35px auto 0;
+}
+.card {
+  background: white;
+  padding: 35px 28px;
+  border-bottom: 3px solid var(--gold);
+}
+.card .number {
+  color: var(--gold);
+  font-size: 14px;
+  letter-spacing: 2px;
+}
+.card h3 {
+  color: var(--green);
+  font-size: 25px;
+  font-weight: normal;
+}
+.card p {
+  line-height: 1.8;
+  color: #62665f;
+}
+.card a {
+  color: var(--green);
+  font-weight: bold;
+  text-decoration: none;
+}
+.quote {
+  text-align: center;
+  background: #eae6d9;
+  padding: 65px 20px;
+  color: var(--green);
+  font-size: 23px;
+  font-style: italic;
+}
+footer {
+  background: var(--green);
+  color: white;
+  text-align: center;
+  padding: 35px 20px;
+  line-height: 1.8;
+}
+@media(max-width:750px) {
+  header { flex-direction: column; gap: 18px; }
+  nav { text-align: center; }
+  nav a { margin: 6px 9px; display: inline-block; }
+  .cards { grid-template-columns: 1fr; }
+  .hero { padding: 75px 20px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">THE OPEN PAGE</div>
+  <nav>
+    <a href="#home">Home</a>
+    <a href="#news">News</a>
+    <a href="#stories">Short Stories</a>
+    <a href="#poetry">Poetry</a>
+  </nav>
+</header>
+
+<section class="hero" id="home">
+  <div class="eyebrow">ENGLISH THROUGH LITERATURE</div>
+  <h1>The Open Page</h1>
+  <p>Discover the beauty of English through news, short stories and poetry. Read, explore ideas and develop your confidence in language.</p>
+  <a href="#learning">Explore Our Learning</a>
+</section>
+
+<section class="intro">
+  <h2>Open a Page. Discover a World.</h2>
+  <p>Welcome to The Open Page, a place where language comes alive through literature and the world around us. Explore fascinating stories, discover poetry and develop your English through engaging lessons and recorded lectures.</p>
+</section>
+
+<section class="courses" id="learning">
+  <h2 style="text-align:center">Explore Our Learning</h2>
+  <div class="cards">
+
+    <article class="card" id="news">
+      <div class="number">01 / CURRENT AFFAIRS</div>
+      <h3>English Through the News</h3>
+      <p>Explore interesting news stories, develop your vocabulary and discover different perspectives on the world.</p>
+      <a href="#news">Discover more →</a>
+    </article>
+
+    <article class="card" id="stories">
+      <div class="number">02 / FICTION</div>
+      <h3>Short Stories</h3>
+      <p>Explore engaging stories alongside recorded video lectures, reading activities and literary discussions.</p>
+      <a href="#stories">Discover more →</a>
+    </article>
+
+    <article class="card" id="poetry">
+      <div class="number">03 / POETRY</div>
+      <h3>Poetry</h3>
+      <p>Discover the language of poetry through recorded lectures, interpretation, imagery and creative expression.</p>
+      <a href="#poetry">Discover more →</a>
+    </article>
+
+  </div>
+</section>
+
+<section class="quote">
+  "Every page is an opportunity to discover something new."
+</section>
+
+<footer>
+  <strong>THE OPEN PAGE</strong><br>
+  English Through Literature<br>
+  Read. Discover. Think. Express.
+</footer>
+
+</body>
+</html>
