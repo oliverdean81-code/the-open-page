@@ -70,6 +70,10 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 <label for="summary">Short introduction / lesson summary</label><textarea id="summary" placeholder="What will students learn in this lesson?"></textarea>
 <label for="content">Reading text and lesson content</label><textarea id="content" style="min-height:230px" placeholder="Paste your article, short story, poem, transcript, or lesson notes here."></textarea>
 <label for="video">Video lesson link (optional)</label><input id="video" type="url" placeholder="https://...">
+<label for="videoFile">Or upload a video from your computer (MP4, WebM or MOV; maximum 50 MB)</label>
+<input id="videoFile" type="file" accept="video/mp4,video/webm,video/quicktime">
+<div class="actions"><button type="button" id="uploadVideoBtn" class="secondary">Upload video</button></div>
+<div id="videoUploadMsg" class="status">Choose a video file, then click Upload video. The uploaded video link will be added to the lesson automatically.</div>
 <div class="actions"><button id="saveDraftBtn" class="secondary">Save as draft</button><button id="publishBtn">Publish lesson</button><button id="cancelBtn" class="secondary">Clear form</button></div>
 <div id="saveMsg" class="status">Create a lesson first. You can then add its vocabulary and activities.</div>
 <div id="extras" class="hidden">
@@ -126,7 +130,7 @@ async function enterDashboard(){
 $('signOutBtn').addEventListener('click',async()=>{await supabaseClient.auth.signOut();currentUser=null;show('dashboard',false);show('loginPanel')});
 $('newLessonBtn').addEventListener('click',()=>{resetEditor();$('editor').scrollIntoView({behavior:'smooth'})});
 $('cancelBtn').addEventListener('click',resetEditor);
-function resetEditor(){['lessonId','title','slug','summary','content','video','word','definition','example','prompt','answer'].forEach(id=>$(id).value='');$('area').value='news';$('level').value='B1';$('editorHeading').textContent='Create a lesson';show('extras',false);message('saveMsg','Create a lesson first. You can then add its vocabulary and activities.')}
+function resetEditor(){['lessonId','title','slug','summary','content','video','word','definition','example','prompt','answer'].forEach(id=>$(id).value='');$('videoFile').value='';message('videoUploadMsg','Choose a video file, then click Upload video. The uploaded video link will be added to the lesson automatically.');$('area').value='news';$('level').value='B1';$('editorHeading').textContent='Create a lesson';show('extras',false);message('saveMsg','Create a lesson first. You can then add its vocabulary and activities.')}
 $('title').addEventListener('input',()=>{if(!$('lessonId').value)$('slug').value=safeSlug($('title').value)});
 async function loadLessons(){
  const {data,error}=await supabaseClient.from('lessons').select('id,title,status,area_id,level_id,created_at,learning_areas(name),levels(name,code)').order('created_at',{ascending:false});
@@ -185,6 +189,22 @@ async function saveLesson(status){
  if(result.error){message('saveMsg','Could not save: '+result.error.message);return}
  $('lessonId').value=result.data.id;$('editorHeading').textContent='Edit lesson';show('extras');message('saveMsg',status==='published'?'Lesson published. Students can now see it.':'Draft saved. Students cannot see it yet.');await loadLessons()
 }
+
+$('uploadVideoBtn').addEventListener('click',async()=>{
+ const file=$('videoFile').files[0];
+ if(!file){message('videoUploadMsg','Please choose a video file first.');return}
+ if(!['video/mp4','video/webm','video/quicktime'].includes(file.type)){message('videoUploadMsg','Please choose an MP4, WebM or MOV video.');return}
+ if(file.size>50*1024*1024){message('videoUploadMsg','This file is larger than 50 MB. Please compress it or choose a smaller video.');return}
+ if(!currentUser){message('videoUploadMsg','Please sign in as the teacher before uploading.');return}
+ const extension=(file.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,'');
+ const filePath=currentUser.id+'/'+Date.now()+'-'+safeSlug(file.name.replace(/\.[^.]+$/,''))+'.'+extension;
+ message('videoUploadMsg','Uploading video… Please keep this page open.');
+ const {data,error}=await supabaseClient.storage.from('lesson-videos').upload(filePath,file,{contentType:file.type,upsert:false});
+ if(error){message('videoUploadMsg','Upload failed: '+error.message);return}
+ const {data:publicData}=supabaseClient.storage.from('lesson-videos').getPublicUrl(data.path);
+ $('video').value=publicData.publicUrl;
+ message('videoUploadMsg','Video uploaded successfully. Its link has been added to the Video lesson link field. Save or publish your lesson to keep the link.');
+});
 $('saveDraftBtn').addEventListener('click',()=>saveLesson('draft'));$('publishBtn').addEventListener('click',()=>saveLesson('published'));
 async function editLesson(id){
  const {data,error}=await supabaseClient.from('lessons').select('*,learning_areas(slug),levels(code)').eq('id',id).single();if(error){message('saveMsg',error.message);return}
