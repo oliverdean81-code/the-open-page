@@ -184,7 +184,14 @@ async function saveLesson(status){
  const areasResult=await supabaseClient.from('learning_areas').select('id,slug');if(areasResult.error){message('saveMsg','Could not load learning areas: '+areasResult.error.message);return}const levelsResult=await supabaseClient.from('levels').select('id,code');if(levelsResult.error){message('saveMsg','Could not load levels: '+levelsResult.error.message);return}
  const area=areasResult.data?.find(x=>x.slug===$('area').value),level=levelsResult.data?.find(x=>x.code===$('level').value);
  if(!area||!level){message('saveMsg','The database lists are empty or do not match the selected area and level. Please tell me which options appear in the two dropdowns.');return}
- const effectiveStatus=status||$('lessonStatus').value||'draft';
+ let effectiveStatus;
+ if(id && status===null){
+  const current=await supabaseClient.from('lessons').select('status').eq('id',id).single();
+  if(current.error){message('saveMsg','Could not check the lesson status: '+current.error.message);return}
+  effectiveStatus=current.data.status||'draft';
+ }else{
+  effectiveStatus=status||$('lessonStatus').value||'draft';
+ }
  const record={area_id:area.id,level_id:level.id,title,slug,summary:$('summary').value,lesson_content:null,video_url:null,status:effectiveStatus,updated_at:new Date().toISOString()};
  let result=id?await supabaseClient.from('lessons').update(record).eq('id',id).select('id').single():await supabaseClient.from('lessons').insert(record).select('id').single();
  if(result.error){message('saveMsg','Could not save lesson details: '+result.error.message);return}
