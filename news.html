@@ -155,19 +155,19 @@ footer {
       <h3>B1</h3>
       <p>Intermediate<br>Understand key information, build vocabulary and express your opinions.</p>
       <a href="#b1">Explore B1</a>
-      <a class="teacher-add" href="teacher.html?area=news&amp;level=B1">Add B1 lesson</a>
+      <a class="teacher-add" href="teacher.html?area=news&amp;level=B1" hidden>Add B1 lesson</a>
     </article>
     <article class="level">
       <h3>B2</h3>
       <p>Upper Intermediate<br>Explore complex issues, arguments and different perspectives.</p>
       <a href="#b2">Explore B2</a>
-      <a class="teacher-add" href="teacher.html?area=news&amp;level=B2">Add B2 lesson</a>
+      <a class="teacher-add" href="teacher.html?area=news&amp;level=B2" hidden>Add B2 lesson</a>
     </article>
     <article class="level">
       <h3>C1</h3>
       <p>Advanced<br>Develop critical thinking and analyse sophisticated ideas and language.</p>
       <a href="#c1">Explore C1</a>
-      <a class="teacher-add" href="teacher.html?area=news&amp;level=C1">Add C1 lesson</a>
+      <a class="teacher-add" href="teacher.html?area=news&amp;level=C1" hidden>Add C1 lesson</a>
     </article>
   </div>
 
@@ -267,6 +267,20 @@ async function loadPublishedNews(){
  }
 }
 loadPublishedNews();
+
+// Show lesson-creation shortcuts only after the database confirms teacher access.
+(async function showTeacherShortcuts(){
+ const buttons = Array.from(document.querySelectorAll('.teacher-add'));
+ try {
+  const { data: { session }, error: sessionError } = await newsClient.auth.getSession();
+  if (sessionError || !session) return;
+  const { data: isTeacher, error: roleError } = await newsClient.rpc('is_teacher');
+  if (roleError || isTeacher !== true) return;
+  buttons.forEach(button => button.hidden = false);
+ } catch (error) {
+  console.error('Could not verify teacher access:', error);
+ }
+})();
 </script>
 </body>
 </html>
