@@ -53,6 +53,10 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 <label for="topicTitle">Topic title</label><input id="topicTitle" placeholder="e.g. What is Literature?">
 <label for="topicSummary">Short introduction (optional)</label><textarea id="topicSummary" style="min-height:85px"></textarea>
 <label for="topicVideo">Video link (optional)</label><input id="topicVideo" type="url" placeholder="https://www.youtube.com/watch?v=...">
+<label for="topicVideoFile">Or upload a video from your computer (MP4, WebM or MOV; maximum 50 MB)</label>
+<input id="topicVideoFile" type="file" accept="video/mp4,video/webm,video/quicktime">
+<div class="actions"><button type="button" id="uploadTopicVideoBtn" class="secondary">Upload topic video</button></div>
+<div id="topicVideoUploadMsg" class="status">Choose a video file and upload it. The video link will be added to the topic automatically.</div>
 <label for="topicMaterial">Notes or supporting learning material (optional)</label><textarea id="topicMaterial" placeholder="Add lecture notes, reading material or instructions."></textarea>
 <label for="topicStatus">Topic status</label><select id="topicStatus"><option value="draft">Save as draft</option><option value="published">Publish topic</option></select>
 <div class="actions"><button type="button" id="createTopicBtn">Add topic</button><button type="button" id="cancelTopicEditBtn" class="secondary" style="display:none">Cancel editing</button></div>
@@ -171,7 +175,7 @@ $('createSectionBtn').addEventListener('click',async()=>{
 });
 function resetTopicEditor(){
  $('topicId').value='';
- ['topicTitle','topicSummary','topicVideo','topicMaterial'].forEach(id=>$(id).value='');
+ ['topicTitle','topicSummary','topicVideo','topicMaterial'].forEach(id=>$(id).value='');$('topicVideoFile').value='';message('topicVideoUploadMsg','Choose a video file and upload it. The video link will be added to the topic automatically.');
  $('createTopicBtn').textContent='Add topic';
  $('cancelTopicEditBtn').style.display='none';
  message('topicMsg','Choose a section and enter a topic title.');
@@ -189,6 +193,21 @@ function editSectionTopic(topic,sectionId){
  message('topicMsg','Editing "'+topic.title+'". Add the video link, then save your changes.');
  $('topicTitle').scrollIntoView({behavior:'smooth',block:'center'});
 }
+$('uploadTopicVideoBtn').addEventListener('click',async()=>{
+ const file=$('topicVideoFile').files[0];
+ if(!file){message('topicVideoUploadMsg','Please choose a video file first.');return}
+ if(!['video/mp4','video/webm','video/quicktime'].includes(file.type)){message('topicVideoUploadMsg','Please choose an MP4, WebM or MOV video.');return}
+ if(file.size>50*1024*1024){message('topicVideoUploadMsg','This file is larger than 50 MB. Please compress it or choose a smaller video.');return}
+ if(!currentUser){message('topicVideoUploadMsg','Please sign in as the teacher before uploading.');return}
+ const extension=(file.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,'');
+ const filePath=currentUser.id+'/topics/'+Date.now()+'-'+safeSlug(file.name.replace(/\\.[^.]+$/,''))+'.'+extension;
+ message('topicVideoUploadMsg','Uploading video… Please keep this page open.');
+ const {data,error}=await supabaseClient.storage.from('lesson-videos').upload(filePath,file,{contentType:file.type,upsert:false});
+ if(error){message('topicVideoUploadMsg','Upload failed: '+error.message);return}
+ const {data:publicData}=supabaseClient.storage.from('lesson-videos').getPublicUrl(data.path);
+ $('topicVideo').value=publicData.publicUrl;
+ message('topicVideoUploadMsg','Video uploaded successfully. Its link has been added to this topic. Save the topic to keep it.');
+});
 $('cancelTopicEditBtn').addEventListener('click',resetTopicEditor);
 $('createTopicBtn').addEventListener('click',async()=>{
  const id=$('topicId').value;
