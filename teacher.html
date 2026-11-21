@@ -156,8 +156,9 @@ async function loadSections(){
   const title=document.createElement('strong');title.textContent=s.title;
   const meta=document.createElement('small');meta.textContent=(s.is_free?'Free for everyone':'Restricted access')+' · '+s.status;
   const desc=document.createElement('p');desc.className='muted';desc.textContent=s.description||'No description added.';
+  const editSection=document.createElement('button');editSection.type='button';editSection.className='secondary';editSection.textContent='Edit section details';editSection.style.margin='10px 0';editSection.addEventListener('click',()=>editContentSection(s));
   const topics=document.createElement('div');topics.className='muted';topics.textContent='Loading topics…';
-  card.append(title,meta,desc,topics);$('sectionList').append(card);
+  card.append(title,meta,desc,editSection,topics);$('sectionList').append(card);
   const {data:items,error:topicError}=await supabaseClient.from('section_topics').select('id,title,video_url,status,sort_order').eq('section_id',s.id).order('sort_order').order('created_at');
   if(topicError){topics.textContent='Could not load topics: '+topicError.message;continue}
   topics.innerHTML='';
@@ -165,13 +166,33 @@ async function loadSections(){
   items.forEach(t=>{const line=document.createElement('div');line.style.padding='8px 0';line.style.borderTop='1px solid var(--line)';const name=document.createElement('strong');name.textContent=t.title;const info=document.createElement('small');info.textContent=(t.video_url?'Video added':'No video link')+' · '+t.status;const edit=document.createElement('button');edit.type='button';edit.className='secondary';edit.textContent='Edit topic';edit.style.marginLeft='12px';edit.addEventListener('click',()=>editSectionTopic(t,s.id));const publish=document.createElement('button');publish.type='button';publish.className=t.status==='published'?'secondary':'gold';publish.textContent=t.status==='published'?'Unpublish':'Publish';publish.style.marginLeft='8px';publish.addEventListener('click',()=>setTopicStatus(t.id,t.status==='published'?'draft':'published',t.title));line.append(name,info,edit,publish);topics.append(line)})
  }
 }
+function editContentSection(section){
+ $('sectionTitle').value=section.title||'';
+ $('sectionDescription').value=section.description||'';
+ $('sectionFree').checked=!!section.is_free;
+ $('sectionStatus').value=section.status||'draft';
+ $('sectionTitle').dataset.editingId=section.id;
+ $('createSectionBtn').textContent='Save section changes';
+ message('sectionMsg','Editing "'+section.title+'". Change the title or description, then save.');
+ $('sectionTitle').scrollIntoView({behavior:'smooth',block:'center'});
+}
+function resetContentSectionForm(){
+ $('sectionTitle').value='';$('sectionDescription').value='';
+ $('sectionTitle').dataset.editingId='';
+ $('sectionFree').checked=true;$('sectionStatus').value='draft';
+ $('createSectionBtn').textContent='Create section';
+}
 $('createSectionBtn').addEventListener('click',async()=>{
+ const id=$('sectionTitle').dataset.editingId||'';
  const title=$('sectionTitle').value.trim();if(!title){message('sectionMsg','Please enter a section title.');return}
  const slug=safeSlug(title);if(!slug){message('sectionMsg','Please use a title containing letters or numbers.');return}
- message('sectionMsg','Saving section…');
- const {error}=await supabaseClient.from('content_sections').insert({title,description:$('sectionDescription').value.trim()||null,slug,is_free:$('sectionFree').checked,status:$('sectionStatus').value});
- if(error){message('sectionMsg','Could not save section: '+error.message);return}
- $('sectionTitle').value='';$('sectionDescription').value='';message('sectionMsg','Your section has been created.');await loadSections()
+ message('sectionMsg',id?'Saving section changes…':'Saving section…');
+ const record={title,description:$('sectionDescription').value.trim()||null,slug,is_free:$('sectionFree').checked,status:$('sectionStatus').value};
+ const result=id?await supabaseClient.from('content_sections').update(record).eq('id',id):await supabaseClient.from('content_sections').insert(record);
+ if(result.error){message('sectionMsg','Could not save section: '+result.error.message);return}
+ resetContentSectionForm();
+ message('sectionMsg',id?'Section details saved.':'Your section has been created.');
+ await loadSections()
 });
 async function setTopicStatus(id,status,title){
  const action=status==='published'?'publish':'return to draft';
