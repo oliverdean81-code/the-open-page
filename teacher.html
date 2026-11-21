@@ -82,7 +82,15 @@ $('connectBtn').addEventListener('click',async()=>{
  $('projectUrl').value=url;$('anonKey').value=key;
  try{await connectWorkspace(url,key)}catch(e){show('setup');message('setupMsg','Could not connect to the teaching database: '+e.message)}
 })();
-$('forgotPassword').addEventListener('click',async(e)=>{\n e.preventDefault();const email=$('email').value.trim();if(!email){message('loginMsg','Please enter your teacher email address first, then click Forgot your password?');return}\n message('loginMsg','Sending password reset email…');const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/reset-password.html'});\n if(error){message('loginMsg','Could not send reset email: '+error.message);return}message('loginMsg','Password reset email sent. Check your inbox and follow the link to choose a new password.');\n});\n$('loginBtn').addEventListener('click',async()=>{
+$('forgotPassword').addEventListener('click',async(e)=>{
+ e.preventDefault();
+ const email=$('email').value.trim();
+ if(!email){message('loginMsg','Please enter your teacher email address first, then click Forgot your password?');return}
+ message('loginMsg','Sending password reset email…');
+ const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/reset-password.html'});
+ if(error){message('loginMsg','Could not send reset email: '+error.message);return}
+ message('loginMsg','Password reset email sent. Check your inbox and follow the link to choose a new password.');
+});\n$('loginBtn').addEventListener('click',async()=>{
  message('loginMsg','Signing in…');const {data,error}=await supabaseClient.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
  if(error){message('loginMsg','Sign-in failed: '+error.message);return}currentUser=data.user;await enterDashboard()
 });
