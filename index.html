@@ -142,6 +142,48 @@ footer {
   .cards { grid-template-columns: 1fr; }
   .hero { padding: 75px 20px; }
 }
+
+.language-guide {
+  max-width: 1000px;
+  margin: 35px auto 20px;
+  padding: 35px 25px;
+  text-align: center;
+  background: #fffdf8;
+  border-top: 3px solid var(--gold);
+}
+.language-guide h2 { margin-top: 0; }
+.language-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 22px auto;
+}
+.language-buttons button {
+  border: 1px solid var(--green);
+  background: transparent;
+  color: var(--green);
+  padding: 10px 14px;
+  border-radius: 3px;
+  font: 15px Georgia, serif;
+  cursor: pointer;
+}
+.language-buttons button:hover,
+.language-buttons button.active {
+  background: var(--green);
+  color: white;
+}
+.language-description {
+  max-width: 760px;
+  margin: 0 auto;
+  line-height: 1.8;
+  text-align: left;
+}
+.language-description h3 { color: var(--green); font-weight: normal; text-align: center; }
+.language-description ul { padding-left: 24px; }
+@media(max-width:750px) {
+  .language-guide { margin: 20px 12px; padding: 28px 18px; }
+}
 </style>
 </head>
 <body>
@@ -167,6 +209,165 @@ footer {
   <a href="#learning">Explore Our Learning</a>
 </section>
 </section>
+
+
+<section class="language-guide" aria-labelledby="language-heading">
+  <h2 id="language-heading">Welcome to The Open Page</h2>
+  <p>Choose your language to find out what the website offers and how it works.</p>
+  <div class="language-buttons" role="group" aria-label="Choose an explanation language">
+    <button type="button" class="active" data-language="en">English</button>
+    <button type="button" data-language="th">ไทย</button>
+    <button type="button" data-language="vi">Tiếng Việt</button>
+    <button type="button" data-language="zh">简体中文</button>
+    <button type="button" data-language="fr">Français</button>
+    <button type="button" data-language="es">Español</button>
+    <button type="button" data-language="pt">Português</button>
+    <button type="button" data-language="it">Italiano</button>
+  </div>
+  <div class="language-description" id="language-description" aria-live="polite">
+    <h3>The Open Page – English Through Literature</h3>
+    <p>The Open Page helps adults improve their English through literature, poetry and news. You can read in English, build your vocabulary, practise reading comprehension and explore ideas in greater depth.</p>
+    <ul>
+      <li>Read short stories, poems and news articles in English.</li>
+      <li>Learn useful vocabulary and expressions.</li>
+      <li>Develop reading comprehension and critical-thinking skills.</li>
+      <li>Watch regular video lessons presented by a native English speaker.</li>
+      <li>Choose learning materials at B1 (Intermediate), B2 (Upper Intermediate) or C1 (Advanced) level.</li>
+    </ul>
+    <p>The explanations on this page are available in your language. The learning materials are in English so you can practise and develop your skills.</p>
+  </div>
+</section>
+<script>
+(function () {
+  const translations = {
+    en: {
+      title: "The Open Page – English Through Literature",
+      body: "The Open Page helps adults improve their English through literature, poetry and news. You can read in English, build your vocabulary, practise reading comprehension and explore ideas in greater depth.",
+      items: [
+        "Read short stories, poems and news articles in English.",
+        "Learn useful vocabulary and expressions.",
+        "Develop reading comprehension and critical-thinking skills.",
+        "Watch regular video lessons presented by a native English speaker.",
+        "Choose learning materials at B1 (Intermediate), B2 (Upper Intermediate) or C1 (Advanced) level."
+      ],
+      note: "The explanations on this page are available in your language. The learning materials are in English so you can practise and develop your skills."
+    },
+    th: {
+      title: "The Open Page – เรียนภาษาอังกฤษผ่านวรรณกรรม",
+      body: "The Open Page ช่วยให้ผู้ใหญ่พัฒนาทักษะภาษาอังกฤษผ่านวรรณกรรม บทกวี และข่าว คุณจะได้อ่านภาษาอังกฤษ เพิ่มพูนคำศัพท์ ฝึกความเข้าใจในการอ่าน และสำรวจแนวคิดต่าง ๆ อย่างลึกซึ้งยิ่งขึ้น",
+      items: [
+        "อ่านเรื่องสั้น บทกวี และบทความข่าวภาษาอังกฤษ",
+        "เรียนรู้คำศัพท์และสำนวนที่มีประโยชน์",
+        "พัฒนาทักษะความเข้าใจในการอ่านและการคิดเชิงวิพากษ์",
+        "รับชมวิดีโอการสอนเป็นประจำ ซึ่งนำเสนอโดยเจ้าของภาษาอังกฤษ",
+        "เลือกเนื้อหาตามระดับ B1 (ระดับกลาง), B2 (ระดับกลางค่อนข้างสูง) หรือ C1 (ระดับสูง)"
+      ],
+      note: "คำอธิบายในหน้านี้มีให้เลือกอ่านในภาษาของคุณ ส่วนเนื้อหาการเรียนรู้เป็นภาษาอังกฤษ เพื่อให้คุณได้ฝึกฝนและพัฒนาทักษะ"
+    },
+    vi: {
+      title: "The Open Page – Học tiếng Anh qua văn học",
+      body: "The Open Page giúp người lớn cải thiện tiếng Anh thông qua văn học, thơ ca và tin tức. Bạn có thể đọc bằng tiếng Anh, mở rộng vốn từ vựng, luyện đọc hiểu và khám phá các ý tưởng sâu hơn.",
+      items: [
+        "Đọc truyện ngắn, thơ và các bài báo bằng tiếng Anh.",
+        "Học từ vựng và cách diễn đạt hữu ích.",
+        "Phát triển kỹ năng đọc hiểu và tư duy phản biện.",
+        "Xem các bài giảng video thường xuyên do người bản ngữ tiếng Anh trình bày.",
+        "Chọn tài liệu học ở trình độ B1 (Trung cấp), B2 (Trên trung cấp) hoặc C1 (Nâng cao)."
+      ],
+      note: "Phần giới thiệu trên trang này có thể xem bằng ngôn ngữ của bạn. Tài liệu học tập được viết bằng tiếng Anh để bạn thực hành và phát triển kỹ năng."
+    },
+    zh: {
+      title: "The Open Page – 通过文学学习英语",
+      body: "The Open Page 帮助成年人通过文学、诗歌和新闻提高英语水平。您可以阅读英文材料、积累词汇、练习阅读理解，并深入探索不同观点。",
+      items: [
+        "阅读英文短篇小说、诗歌和新闻文章。",
+        "学习实用词汇和表达方式。",
+        "提高阅读理解能力和批判性思维能力。",
+        "定期观看由英语母语者讲授的视频课程。",
+        "根据 B1（中级）、B2（中高级）或 C1（高级）水平选择学习材料。"
+      ],
+      note: "本页面的介绍可以使用您的语言阅读。学习材料使用英语，帮助您练习并提高英语能力。"
+    },
+    fr: {
+      title: "The Open Page – Apprendre l’anglais grâce à la littérature",
+      body: "The Open Page aide les adultes à améliorer leur anglais grâce à la littérature, à la poésie et à l’actualité. Vous pouvez lire en anglais, enrichir votre vocabulaire, travailler la compréhension écrite et approfondir votre réflexion.",
+      items: [
+        "Lire des nouvelles, des poèmes et des articles d’actualité en anglais.",
+        "Apprendre du vocabulaire et des expressions utiles.",
+        "Développer la compréhension écrite et l’esprit critique.",
+        "Regarder régulièrement des cours vidéo présentés par un anglophone de langue maternelle.",
+        "Choisir des ressources adaptées aux niveaux B1 (intermédiaire), B2 (intermédiaire avancé) ou C1 (avancé)."
+      ],
+      note: "La présentation de ce site est disponible dans votre langue. Les supports pédagogiques sont en anglais afin de vous permettre de pratiquer et de progresser."
+    },
+    es: {
+      title: "The Open Page – Aprende inglés a través de la literatura",
+      body: "The Open Page ayuda a los adultos a mejorar su inglés mediante la literatura, la poesía y las noticias. Puedes leer en inglés, ampliar tu vocabulario, practicar la comprensión lectora y profundizar en distintas ideas.",
+      items: [
+        "Leer relatos cortos, poemas y artículos de noticias en inglés.",
+        "Aprender vocabulario y expresiones útiles.",
+        "Desarrollar la comprensión lectora y el pensamiento crítico.",
+        "Ver clases en vídeo periódicas impartidas por un hablante nativo de inglés.",
+        "Elegir materiales de nivel B1 (intermedio), B2 (intermedio alto) o C1 (avanzado)."
+      ],
+      note: "La explicación de esta página está disponible en tu idioma. Los materiales de aprendizaje están en inglés para que puedas practicar y mejorar tus habilidades."
+    },
+    pt: {
+      title: "The Open Page – Aprenda inglês através da literatura",
+      body: "The Open Page ajuda adultos a melhorar o inglês através da literatura, da poesia e das notícias. Pode ler em inglês, ampliar o vocabulário, praticar a compreensão da leitura e explorar ideias com maior profundidade.",
+      items: [
+        "Ler contos, poemas e artigos de notícias em inglês.",
+        "Aprender vocabulário e expressões úteis.",
+        "Desenvolver a compreensão da leitura e o pensamento crítico.",
+        "Assistir regularmente a aulas em vídeo apresentadas por um falante nativo de inglês.",
+        "Escolher materiais dos níveis B1 (intermédio), B2 (intermédio superior) ou C1 (avançado)."
+      ],
+      note: "A explicação desta página está disponível no seu idioma. Os materiais de aprendizagem estão em inglês para que possa praticar e desenvolver as suas competências."
+    },
+    it: {
+      title: "The Open Page – Imparare l’inglese attraverso la letteratura",
+      body: "The Open Page aiuta gli adulti a migliorare il proprio inglese attraverso la letteratura, la poesia e le notizie. Puoi leggere in inglese, ampliare il vocabolario, esercitare la comprensione del testo e approfondire diverse idee.",
+      items: [
+        "Leggere racconti brevi, poesie e articoli di attualità in inglese.",
+        "Imparare vocaboli ed espressioni utili.",
+        "Sviluppare la comprensione del testo e il pensiero critico.",
+        "Guardare regolarmente videolezioni presentate da un madrelingua inglese.",
+        "Scegliere materiali di livello B1 (intermedio), B2 (intermedio superiore) o C1 (avanzato)."
+      ],
+      note: "La presentazione di questo sito è disponibile nella tua lingua. I materiali didattici sono in inglese, così puoi esercitarti e migliorare le tue competenze."
+    }
+  };
+  const panel = document.getElementById("language-description");
+  const buttons = document.querySelectorAll(".language-buttons button");
+  buttons.forEach(function (button) {
+    button.addEventListener("click", function () {
+      const t = translations[button.dataset.language];
+      if (!t) return;
+      panel.replaceChildren();
+      const heading = document.createElement("h3");
+      heading.textContent = t.title;
+      panel.appendChild(heading);
+      const paragraph = document.createElement("p");
+      paragraph.textContent = t.body;
+      panel.appendChild(paragraph);
+      const list = document.createElement("ul");
+      t.items.forEach(function (item) {
+        const li = document.createElement("li");
+        li.textContent = item;
+        list.appendChild(li);
+      });
+      panel.appendChild(list);
+      const note = document.createElement("p");
+      note.textContent = t.note;
+      panel.appendChild(note);
+      buttons.forEach(function (b) {
+        b.classList.toggle("active", b === button);
+        b.setAttribute("aria-pressed", b === button ? "true" : "false");
+      });
+    });
+  });
+})();
+</script>
 
 <section class="courses" id="learning">
   <h2 style="text-align:center">Explore Our Learning</h2>
