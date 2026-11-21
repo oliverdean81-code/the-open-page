@@ -60,7 +60,28 @@ async function loadTopics(){
    add('h2',topic.title,card);
    if(topic.summary)add('p',topic.summary,card);
    if(topic.learning_material)add('div',topic.learning_material,card);
-   if(topic.video_url){const link=add('a','Watch video lecture',card);link.href=topic.video_url;link.target='_blank';link.rel='noopener noreferrer'}
+   if(topic.video_url){
+    const url=topic.video_url.trim();
+    const isYouTube=/^(https?:\\/\\/)?(www\\.)?(youtube\\.com\\/watch\\?v=|youtu\\.be\\/|youtube\\.com\\/embed\\/)/i.test(url);
+    const youtubeId=(url.match(/[?&]v=([^&]+)/)||url.match(/youtu\\.be\\/([^?&]+)/)||url.match(/youtube\\.com\\/embed\\/([^?&]+)/)||[])[1];
+    if(isYouTube&&youtubeId){
+     const frame=document.createElement('iframe');
+     frame.src='https://www.youtube-nocookie.com/embed/'+encodeURIComponent(youtubeId);
+     frame.title='Video lecture: '+topic.title;
+     frame.loading='lazy';
+     frame.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+     frame.allowFullscreen=true;
+     frame.style.cssText='display:block;width:100%;aspect-ratio:16/9;border:0;border-radius:4px;margin-top:16px';
+     card.appendChild(frame);
+    }else if(/\\.(mp4|webm|mov)(\\?|$)/i.test(url)){
+     const video=document.createElement('video');
+     video.controls=true;video.preload='metadata';video.src=url;
+     video.style.cssText='display:block;width:100%;max-height:560px;background:#000;border-radius:4px;margin-top:16px';
+     card.appendChild(video);
+    }else{
+     const link=add('a','Watch video lecture',card);link.href=url;link.target='_blank';link.rel='noopener noreferrer';
+    }
+   }
   });
  }catch(err){root.replaceChildren();add('p','We could not load the introductory topics. Please try again later.',root,'muted');console.error(err)}
 }
