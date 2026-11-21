@@ -62,8 +62,8 @@ async function loadTopics(){
    if(topic.learning_material)add('div',topic.learning_material,card);
    if(topic.video_url){
     const url=topic.video_url.trim();
-    const isYouTube=/^(https?:\\/\\/)?(www\\.)?(youtube\\.com\\/watch\\?v=|youtu\\.be\\/|youtube\\.com\\/embed\\/)/i.test(url);
-    const youtubeId=(url.match(/[?&]v=([^&]+)/)||url.match(/youtu\\.be\\/([^?&]+)/)||url.match(/youtube\\.com\\/embed\\/([^?&]+)/)||[])[1];
+    const isYouTube=/^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)/i.test(url);
+    const youtubeId=(url.match(/[?&]v=([^&]+)/)||url.match(/youtu\.be\/([^?&]+)/)||url.match(/youtube\.com\/embed\/([^?&]+)/)||[])[1];
     if(isYouTube&&youtubeId){
      const frame=document.createElement('iframe');
      frame.src='https://www.youtube-nocookie.com/embed/'+encodeURIComponent(youtubeId);
@@ -73,7 +73,7 @@ async function loadTopics(){
      frame.allowFullscreen=true;
      frame.style.cssText='display:block;width:100%;aspect-ratio:16/9;border:0;border-radius:4px;margin-top:16px';
      card.appendChild(frame);
-    }else if(/\\.(mp4|webm|mov)(\\?|$)/i.test(url)){
+    }else if(/\.(mp4|webm|mov)(\?|$)/i.test(url)){
      const video=document.createElement('video');
      video.controls=true;video.preload='metadata';video.src=url;
      video.style.cssText='display:block;width:100%;max-height:560px;background:#000;border-radius:4px;margin-top:16px';
