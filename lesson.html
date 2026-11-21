@@ -11,12 +11,15 @@ function el(tag,text,cls){const x=document.createElement(tag);x.textContent=text
 function panel(title){const p=document.createElement('section');p.className='panel';p.appendChild(el('h2',title));return p}
 async function load(){const slug=new URLSearchParams(location.search).get('slug');if(!slug){root.replaceChildren(el('p','No lesson was selected. Please return to the lessons page.'));return}
 try{
-const {data:lesson,error}=await client.from('lessons').select('id,title,slug,summary,lesson_content,video_url,area_id,level_id,status').eq('slug',slug).eq('status','published').single();if(error)throw error;
+const {data:lesson,error}=await client.from('lessons').select('id,title,slug,summary,area_id,level_id,status').eq('slug',slug).eq('status','published').single();if(error)throw error;
+const {data:privateRows,error:privateError}=await client.rpc('get_lesson_private_content',{p_lesson_id:lesson.id});
+if(privateError)throw new Error('This lesson requires an active membership. Please sign in and check your membership, then try again.');
+const privateData=Array.isArray(privateRows)?privateRows[0]:privateRows;
 const [{data:areas,error:ae},{data:levels,error:le}]=await Promise.all([client.from('learning_areas').select('id,name,slug'),client.from('levels').select('id,name,code')]);if(ae)throw ae;if(le)throw le;
 const area=areas.find(x=>String(x.id)===String(lesson.area_id)),level=levels.find(x=>String(x.id)===String(lesson.level_id));document.title=lesson.title+' | The Open Page';document.getElementById('backLink').href=area?.slug==='news'?'news.html':area?.slug==='short-stories'?'stories.html':area?.slug==='poetry'?'poetry.html':'index.html';root.replaceChildren();
 root.appendChild(el('p',(area?.name||'')+' · '+(level?.code||''),'meta'));root.appendChild(el('h1',lesson.title));if(lesson.summary)root.appendChild(el('p',lesson.summary,'meta'));
-if(lesson.video_url){const p=panel('Video lesson'),a=el('a','Watch video','video-link');a.href=lesson.video_url;a.target='_blank';a.rel='noopener noreferrer';p.appendChild(a);root.appendChild(p)}
-if(lesson.lesson_content){const p=panel('Reading');p.appendChild(el('div',lesson.lesson_content,'lesson-text'));root.appendChild(p)}
+if(privateData?.video_url){const p=panel('Video lesson'),a=el('a','Watch video','video-link');a.href=privateData.video_url;a.target='_blank';a.rel='noopener noreferrer';p.appendChild(a);root.appendChild(p)}
+if(privateData?.lesson_content){const p=panel('Reading');p.appendChild(el('div',privateData.lesson_content,'lesson-text'));root.appendChild(p)}
 const {data:vocab,error:ve}=await client.from('vocabulary').select('word,definition,example').eq('lesson_id',lesson.id).order('sort_order');if(ve)throw ve;if(vocab?.length){const p=panel('Vocabulary');vocab.forEach(v=>{const d=el('div','','word');d.appendChild(el('strong',v.word));d.appendChild(el('div',v.definition));if(v.example)d.appendChild(el('em',v.example));p.appendChild(d)});root.appendChild(p)}
 const {data:acts,error:ae2}=await client.from('activities').select('activity_type,prompt,suggested_answer').eq('lesson_id',lesson.id).order('sort_order');if(ae2)throw ae2;if(acts?.length){const p=panel('Activities');acts.forEach(a=>{const d=el('div','','activity');d.appendChild(el('small',a.activity_type));d.appendChild(el('p',a.prompt));if(a.suggested_answer){const details=el('details',''),summary=el('summary','Suggested answer');details.appendChild(summary);details.appendChild(el('p',a.suggested_answer));d.appendChild(details)}p.appendChild(d)});root.appendChild(p)}
 }catch(e){root.replaceChildren(el('p','This lesson could not be loaded: '+e.message))}}
