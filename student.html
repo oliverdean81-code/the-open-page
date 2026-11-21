@@ -55,7 +55,12 @@ $('signIn').addEventListener('click',async()=>{
  status('Signing in…');const {error}=await client.auth.signInWithPassword({email,password});
  if(error){status(error.message);return}signedIn()
 });
-$('forgotPassword').addEventListener('click',async(e)=>{\n e.preventDefault();const email=$('email').value.trim();if(!email){status('Please enter your email address first, then click Forgot your password?');return}\n status('Sending password reset email…');const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/reset-password.html'});\n if(error){status('Could not send reset email: '+error.message);return}status('Password reset email sent. Please check your inbox and follow the link to choose a new password.');\n});\n$('signUp').addEventListener('click',async()=>{
+$('forgotPassword').addEventListener('click',async(e)=>{
+ e.preventDefault();const email=$('email').value.trim();if(!email){status('Please enter your email address first, then click Forgot your password?');return}
+ status('Sending password reset email…');const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/reset-password.html'});
+ if(error){status('Could not send reset email: '+error.message);return}status('Password reset email sent. Please check your inbox and follow the link to choose a new password.');
+});
+$('signUp').addEventListener('click',async()=>{
  const email=$('email').value.trim(),password=$('password').value;
  if(!email||!password){status('Please enter your email and choose a password.');return}
  if(password.length<6){status('Please choose a password with at least 6 characters.');return}
