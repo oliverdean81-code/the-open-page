@@ -36,6 +36,28 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 </section>
 <section id="dashboard" class="hidden">
 <div class="panel"><div class="actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 style="margin:0">Your lessons</h2><div class="actions"><a href="index.html" style="display:inline-block;text-decoration:none;border-radius:7px;padding:12px 18px;background:var(--green);color:white;font:600 14px Arial,sans-serif">View website</a><button id="signOutBtn" class="secondary">Sign out</button></div></div><p class="muted">Only lessons you publish will be visible to students.</p><div id="lessonList"></div><button id="newLessonBtn" class="gold">Create a new lesson</button></div>
+
+<div class="panel" id="contentManager">
+<h2>Sections and video topics</h2>
+<p class="muted">Create your own learning sections, then add video topics and supporting materials inside them. Mark a section as free if everyone should be able to access it.</p>
+<h3>Create a new section</h3>
+<label for="sectionTitle">Section title</label><input id="sectionTitle" placeholder="e.g. Introduction to English Literature">
+<label for="sectionDescription">Short description (optional)</label><textarea id="sectionDescription" style="min-height:85px" placeholder="What will learners explore in this section?"></textarea>
+<div class="grid"><div><label for="sectionStatus">Section status</label><select id="sectionStatus"><option value="draft">Save as draft</option><option value="published">Publish section</option></select></div><div style="display:flex;align-items:end;padding-bottom:8px"><label style="display:flex;gap:9px;align-items:center;margin:0"><input id="sectionFree" type="checkbox" checked style="width:auto"> Free for everyone</label></div></div>
+<div class="actions"><button id="createSectionBtn" class="gold">Create section</button></div>
+<div id="sectionMsg" class="status">Your sections will appear below.</div>
+<h3>Your sections</h3><div id="sectionList"><p class="muted">Loading sections…</p></div>
+<div class="divider" style="border-top:1px solid var(--line);margin:24px 0"></div>
+<h3>Add a topic or video</h3>
+<label for="topicSection">Choose a section</label><select id="topicSection"><option value="">Create a section first</option></select>
+<label for="topicTitle">Topic title</label><input id="topicTitle" placeholder="e.g. What is Literature?">
+<label for="topicSummary">Short introduction (optional)</label><textarea id="topicSummary" style="min-height:85px"></textarea>
+<label for="topicVideo">Video link (optional)</label><input id="topicVideo" type="url" placeholder="https://www.youtube.com/watch?v=...">
+<label for="topicMaterial">Notes or supporting learning material (optional)</label><textarea id="topicMaterial" placeholder="Add lecture notes, reading material or instructions."></textarea>
+<label for="topicStatus">Topic status</label><select id="topicStatus"><option value="draft">Save as draft</option><option value="published">Publish topic</option></select>
+<div class="actions"><button id="createTopicBtn">Add topic</button></div>
+<div id="topicMsg" class="status">Choose a section and enter a topic title.</div>
+</div>
 <div class="panel" id="editor">
 <h2 id="editorHeading">Create a lesson</h2>
 <input id="lessonId" type="hidden">
@@ -98,7 +120,7 @@ $('loginBtn').addEventListener('click',async()=>{
 async function enterDashboard(){
  const {data,error}=await supabaseClient.rpc('is_teacher');
  if(error||data!==true){await supabaseClient.auth.signOut();message('loginMsg','Teacher access check failed: '+(error?.message||'The database did not confirm teacher access.'));return}
- show('loginPanel',false);show('setup',false);show('dashboard');await loadLessons()
+ show('loginPanel',false);show('setup',false);show('dashboard');await loadLessons();await loadSections()
 }
 
 $('signOutBtn').addEventListener('click',async()=>{await supabaseClient.auth.signOut();currentUser=null;show('dashboard',false);show('loginPanel')});
@@ -113,6 +135,45 @@ async function loadLessons(){
  if(!data.length){$('lessonList').innerHTML='<p class="muted">No lessons yet. Create your first lesson below.</p>';return}
  data.forEach(l=>{const div=document.createElement('div');div.className='lesson';const strong=document.createElement('strong');strong.textContent=l.title;const small=document.createElement('small');small.textContent=(l.learning_areas?.name||'')+' · '+(l.levels?.code||'')+' · '+l.status;const btn=document.createElement('button');btn.className='secondary';btn.textContent='Edit lesson';btn.addEventListener('click',()=>editLesson(l.id));div.append(strong,small,btn);$('lessonList').append(div)})
 }
+
+async function loadSections(){
+ const {data,error}=await supabaseClient.from('content_sections').select('id,title,description,slug,is_free,status,sort_order').order('sort_order').order('created_at');
+ if(error){$('sectionList').textContent='Could not load sections: '+error.message;message('sectionMsg','Database message: '+error.message);return}
+ const select=$('topicSection');select.innerHTML='';
+ if(!data.length){select.innerHTML='<option value="">Create a section first</option>';$('sectionList').innerHTML='<p class="muted">No sections yet. Create your first section above.</p>';return}
+ data.forEach(s=>{const option=document.createElement('option');option.value=s.id;option.textContent=s.title;select.append(option)});
+ $('sectionList').innerHTML='';
+ for(const s of data){
+  const card=document.createElement('div');card.className='lesson';
+  const title=document.createElement('strong');title.textContent=s.title;
+  const meta=document.createElement('small');meta.textContent=(s.is_free?'Free for everyone':'Restricted access')+' · '+s.status;
+  const desc=document.createElement('p');desc.className='muted';desc.textContent=s.description||'No description added.';
+  const topics=document.createElement('div');topics.className='muted';topics.textContent='Loading topics…';
+  card.append(title,meta,desc,topics);$('sectionList').append(card);
+  const {data:items,error:topicError}=await supabaseClient.from('section_topics').select('id,title,video_url,status,sort_order').eq('section_id',s.id).order('sort_order').order('created_at');
+  if(topicError){topics.textContent='Could not load topics: '+topicError.message;continue}
+  topics.innerHTML='';
+  if(!items.length){topics.textContent='No topics added yet.';continue}
+  items.forEach(t=>{const line=document.createElement('div');line.style.padding='8px 0';line.style.borderTop='1px solid var(--line)';const name=document.createElement('strong');name.textContent=t.title;const info=document.createElement('small');info.textContent=(t.video_url?'Video added':'No video link')+' · '+t.status;line.append(name,info);topics.append(line)})
+ }
+}
+$('createSectionBtn').addEventListener('click',async()=>{
+ const title=$('sectionTitle').value.trim();if(!title){message('sectionMsg','Please enter a section title.');return}
+ const slug=safeSlug(title);if(!slug){message('sectionMsg','Please use a title containing letters or numbers.');return}
+ message('sectionMsg','Saving section…');
+ const {error}=await supabaseClient.from('content_sections').insert({title,description:$('sectionDescription').value.trim()||null,slug,is_free:$('sectionFree').checked,status:$('sectionStatus').value});
+ if(error){message('sectionMsg','Could not save section: '+error.message);return}
+ $('sectionTitle').value='';$('sectionDescription').value='';message('sectionMsg','Your section has been created.');await loadSections()
+});
+$('createTopicBtn').addEventListener('click',async()=>{
+ const section_id=$('topicSection').value,title=$('topicTitle').value.trim();if(!section_id){message('topicMsg','Please create or choose a section first.');return}
+ if(!title){message('topicMsg','Please enter a topic title.');return}
+ const slug=safeSlug(title);if(!slug){message('topicMsg','Please use a title containing letters or numbers.');return}
+ message('topicMsg','Saving topic…');
+ const {error}=await supabaseClient.from('section_topics').insert({section_id,title,slug,summary:$('topicSummary').value.trim()||null,video_url:$('topicVideo').value.trim()||null,learning_material:$('topicMaterial').value.trim()||null,status:$('topicStatus').value});
+ if(error){message('topicMsg','Could not save topic: '+error.message);return}
+ ['topicTitle','topicSummary','topicVideo','topicMaterial'].forEach(id=>$(id).value='');message('topicMsg','Your topic has been added.');await loadSections()
+});
 async function saveLesson(status){
  const id=$('lessonId').value;const title=$('title').value.trim(),slug=safeSlug($('slug').value||title);
  if(!title||!slug){message('saveMsg','Please enter a lesson title.');return}
