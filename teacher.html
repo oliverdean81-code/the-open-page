@@ -120,7 +120,7 @@ $('loginBtn').addEventListener('click',async()=>{
 async function enterDashboard(){
  const {data,error}=await supabaseClient.rpc('is_teacher');
  if(error||data!==true){await supabaseClient.auth.signOut();message('loginMsg','Teacher access check failed: '+(error?.message||'The database did not confirm teacher access.'));return}
- show('loginPanel',false);show('setup',false);show('dashboard');await loadLessons();await loadSections()
+ show('loginPanel',false);show('setup',false);show('dashboard');const params=new URLSearchParams(window.location.search);if(params.get('area')&&['news','short-stories','poetry'].includes(params.get('area'))) $('area').value=params.get('area');if(params.get('level')&&['B1','B2','C1'].includes(params.get('level'))) $('level').value=params.get('level');await loadLessons();await loadSections();if(params.has('level')) $('editor').scrollIntoView({behavior:'smooth'})
 }
 
 $('signOutBtn').addEventListener('click',async()=>{await supabaseClient.auth.signOut();currentUser=null;show('dashboard',false);show('loginPanel')});
