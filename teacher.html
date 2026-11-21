@@ -60,7 +60,7 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 </div>
 <div class="panel" id="editor">
 <h2 id="editorHeading">Create a lesson</h2>
-<input id="lessonId" type="hidden">
+<input id="lessonId" type="hidden"><input id="lessonStatus" type="hidden" value="draft">
 <div class="grid">
 <div><label for="area">Learning area</label><select id="area"><option value="news">English Through the News</option><option value="short-stories">Short Stories</option><option value="poetry">Poetry</option></select></div>
 <div><label for="level">Level</label><select id="level"><option value="B1">B1 · Intermediate</option><option value="B2">B2 · Upper Intermediate</option><option value="C1">C1 · Advanced</option></select></div>
@@ -74,7 +74,7 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 <input id="videoFile" type="file" accept="video/mp4,video/webm,video/quicktime">
 <div class="actions"><button type="button" id="uploadVideoBtn" class="secondary">Upload video</button></div>
 <div id="videoUploadMsg" class="status">Choose a video file, then click Upload video. The uploaded video link will be added to the lesson automatically.</div>
-<div class="actions"><button id="saveDraftBtn" class="secondary">Save as draft</button><button id="publishBtn">Publish lesson</button><button id="cancelBtn" class="secondary">Clear form</button></div>
+<div class="actions"><button id="saveChangesBtn" class="secondary">Save changes</button><button id="saveDraftBtn" class="secondary">Save as draft</button><button id="publishBtn">Publish lesson</button><button id="cancelBtn" class="secondary">Clear form</button></div>
 <div id="saveMsg" class="status">Create a lesson first. You can then add its vocabulary and activities.</div>
 <div id="extras" class="hidden">
 <h3>Vocabulary</h3><div class="grid"><div><label for="word">Word or phrase</label><input id="word"></div><div><label for="definition">Definition</label><input id="definition"></div></div><label for="example">Example sentence (optional)</label><input id="example"><div class="actions"><button id="addWordBtn" class="secondary">Add vocabulary</button></div><div id="vocabList" class="muted"></div>
@@ -130,7 +130,7 @@ async function enterDashboard(){
 $('signOutBtn').addEventListener('click',async()=>{await supabaseClient.auth.signOut();currentUser=null;show('dashboard',false);show('loginPanel')});
 $('newLessonBtn').addEventListener('click',()=>{resetEditor();$('editor').scrollIntoView({behavior:'smooth'})});
 $('cancelBtn').addEventListener('click',resetEditor);
-function resetEditor(){['lessonId','title','slug','summary','content','video','word','definition','example','prompt','answer'].forEach(id=>$(id).value='');$('videoFile').value='';message('videoUploadMsg','Choose a video file, then click Upload video. The uploaded video link will be added to the lesson automatically.');$('area').value='news';$('level').value='B1';$('editorHeading').textContent='Create a lesson';show('extras',false);message('saveMsg','Create a lesson first. You can then add its vocabulary and activities.')}
+function resetEditor(){['lessonId','title','slug','summary','content','video','word','definition','example','prompt','answer'].forEach(id=>$(id).value='');$('lessonStatus').value='draft';$('videoFile').value='';message('videoUploadMsg','Choose a video file, then click Upload video. The uploaded video link will be added to the lesson automatically.');$('area').value='news';$('level').value='B1';$('editorHeading').textContent='Create a lesson';show('extras',false);message('saveMsg','Create a lesson first. You can then add its vocabulary and activities.')}
 $('title').addEventListener('input',()=>{if(!$('lessonId').value)$('slug').value=safeSlug($('title').value)});
 async function loadLessons(){
  const {data,error}=await supabaseClient.from('lessons').select('id,title,status,area_id,level_id,created_at,learning_areas(name),levels(name,code)').order('created_at',{ascending:false});
@@ -184,7 +184,8 @@ async function saveLesson(status){
  const areasResult=await supabaseClient.from('learning_areas').select('id,slug');if(areasResult.error){message('saveMsg','Could not load learning areas: '+areasResult.error.message);return}const levelsResult=await supabaseClient.from('levels').select('id,code');if(levelsResult.error){message('saveMsg','Could not load levels: '+levelsResult.error.message);return}
  const area=areasResult.data?.find(x=>x.slug===$('area').value),level=levelsResult.data?.find(x=>x.code===$('level').value);
  if(!area||!level){message('saveMsg','The database lists are empty or do not match the selected area and level. Please tell me which options appear in the two dropdowns.');return}
- const record={area_id:area.id,level_id:level.id,title,slug,summary:$('summary').value,lesson_content:null,video_url:null,status,updated_at:new Date().toISOString()};
+ const effectiveStatus=status||$('lessonStatus').value||'draft';
+ const record={area_id:area.id,level_id:level.id,title,slug,summary:$('summary').value,lesson_content:null,video_url:null,status:effectiveStatus,updated_at:new Date().toISOString()};
  let result=id?await supabaseClient.from('lessons').update(record).eq('id',id).select('id').single():await supabaseClient.from('lessons').insert(record).select('id').single();
  if(result.error){message('saveMsg','Could not save lesson details: '+result.error.message);return}
  const lessonId=result.data.id;
@@ -195,7 +196,7 @@ async function saveLesson(status){
   updated_at:new Date().toISOString()
  },{onConflict:'lesson_id'});
  if(privateError){message('saveMsg','The lesson details were saved, but the private learning material could not be saved: '+privateError.message);return}
- $('lessonId').value=lessonId;$('editorHeading').textContent='Edit lesson';show('extras');message('saveMsg',status==='published'?'Lesson published. Full learning material is stored privately.':'Draft saved. Full learning material is stored privately.');await loadLessons()
+ $('lessonId').value=lessonId;$('lessonStatus').value=effectiveStatus;$('editorHeading').textContent='Edit lesson';show('extras');message('saveMsg',effectiveStatus==='published'?'Lesson published. Full learning material is stored privately.':'Draft saved. Full learning material is stored privately.');await loadLessons()
 }
 
 $('uploadVideoBtn').addEventListener('click',async()=>{
@@ -213,13 +214,13 @@ $('uploadVideoBtn').addEventListener('click',async()=>{
  $('video').value=publicData.publicUrl;
  message('videoUploadMsg','Video uploaded successfully. Its link has been added to the Video lesson link field. Save or publish your lesson to keep the link.');
 });
-$('saveDraftBtn').addEventListener('click',()=>saveLesson('draft'));$('publishBtn').addEventListener('click',()=>saveLesson('published'));
+$('saveChangesBtn').addEventListener('click',()=>saveLesson(null));$('saveDraftBtn').addEventListener('click',()=>saveLesson('draft'));$('publishBtn').addEventListener('click',()=>saveLesson('published'));
 async function editLesson(id){
  const {data,error}=await supabaseClient.from('lessons').select('id,title,slug,summary,area_id,level_id,status,learning_areas(slug),levels(code)').eq('id',id).single();if(error){message('saveMsg',error.message);return}
  const {data:privateRows,error:privateError}=await supabaseClient.rpc('get_lesson_private_content',{p_lesson_id:id});
  if(privateError){message('saveMsg','Could not load private learning material: '+privateError.message);return}
  const privateData=Array.isArray(privateRows)?privateRows[0]:privateRows;
- $('lessonId').value=data.id;$('title').value=data.title;$('slug').value=data.slug;$('summary').value=data.summary||'';$('content').value=privateData?.lesson_content||'';$('video').value=privateData?.video_url||'';$('area').value=data.learning_areas.slug;$('level').value=data.levels.code;$('editorHeading').textContent='Edit lesson';show('extras');await loadExtras();$('editor').scrollIntoView({behavior:'smooth'})
+ $('lessonId').value=data.id;$('lessonStatus').value=data.status||'draft';$('title').value=data.title;$('slug').value=data.slug;$('summary').value=data.summary||'';$('content').value=privateData?.lesson_content||'';$('video').value=privateData?.video_url||'';$('area').value=data.learning_areas.slug;$('level').value=data.levels.code;$('editorHeading').textContent='Edit lesson';show('extras');await loadExtras();$('editor').scrollIntoView({behavior:'smooth'})
 }
 async function loadExtras(){
  const id=$('lessonId').value;if(!id)return;
