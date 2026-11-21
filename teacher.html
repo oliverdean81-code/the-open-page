@@ -184,10 +184,18 @@ async function saveLesson(status){
  const areasResult=await supabaseClient.from('learning_areas').select('id,slug');if(areasResult.error){message('saveMsg','Could not load learning areas: '+areasResult.error.message);return}const levelsResult=await supabaseClient.from('levels').select('id,code');if(levelsResult.error){message('saveMsg','Could not load levels: '+levelsResult.error.message);return}
  const area=areasResult.data?.find(x=>x.slug===$('area').value),level=levelsResult.data?.find(x=>x.code===$('level').value);
  if(!area||!level){message('saveMsg','The database lists are empty or do not match the selected area and level. Please tell me which options appear in the two dropdowns.');return}
- const record={area_id:area.id,level_id:level.id,title,slug,summary:$('summary').value,lesson_content:$('content').value,video_url:$('video').value.trim()||null,status,updated_at:new Date().toISOString()};
+ const record={area_id:area.id,level_id:level.id,title,slug,summary:$('summary').value,lesson_content:null,video_url:null,status,updated_at:new Date().toISOString()};
  let result=id?await supabaseClient.from('lessons').update(record).eq('id',id).select('id').single():await supabaseClient.from('lessons').insert(record).select('id').single();
- if(result.error){message('saveMsg','Could not save: '+result.error.message);return}
- $('lessonId').value=result.data.id;$('editorHeading').textContent='Edit lesson';show('extras');message('saveMsg',status==='published'?'Lesson published. Students can now see it.':'Draft saved. Students cannot see it yet.');await loadLessons()
+ if(result.error){message('saveMsg','Could not save lesson details: '+result.error.message);return}
+ const lessonId=result.data.id;
+ const {error:privateError}=await supabaseClient.from('lesson_private_content').upsert({
+  lesson_id:lessonId,
+  lesson_content:$('content').value,
+  video_url:$('video').value.trim()||null,
+  updated_at:new Date().toISOString()
+ },{onConflict:'lesson_id'});
+ if(privateError){message('saveMsg','The lesson details were saved, but the private learning material could not be saved: '+privateError.message);return}
+ $('lessonId').value=lessonId;$('editorHeading').textContent='Edit lesson';show('extras');message('saveMsg',status==='published'?'Lesson published. Full learning material is stored privately.':'Draft saved. Full learning material is stored privately.');await loadLessons()
 }
 
 $('uploadVideoBtn').addEventListener('click',async()=>{
@@ -207,8 +215,11 @@ $('uploadVideoBtn').addEventListener('click',async()=>{
 });
 $('saveDraftBtn').addEventListener('click',()=>saveLesson('draft'));$('publishBtn').addEventListener('click',()=>saveLesson('published'));
 async function editLesson(id){
- const {data,error}=await supabaseClient.from('lessons').select('*,learning_areas(slug),levels(code)').eq('id',id).single();if(error){message('saveMsg',error.message);return}
- $('lessonId').value=data.id;$('title').value=data.title;$('slug').value=data.slug;$('summary').value=data.summary||'';$('content').value=data.lesson_content||'';$('video').value=data.video_url||'';$('area').value=data.learning_areas.slug;$('level').value=data.levels.code;$('editorHeading').textContent='Edit lesson';show('extras');await loadExtras();$('editor').scrollIntoView({behavior:'smooth'})
+ const {data,error}=await supabaseClient.from('lessons').select('id,title,slug,summary,area_id,level_id,status,learning_areas(slug),levels(code)').eq('id',id).single();if(error){message('saveMsg',error.message);return}
+ const {data:privateRows,error:privateError}=await supabaseClient.rpc('get_lesson_private_content',{p_lesson_id:id});
+ if(privateError){message('saveMsg','Could not load private learning material: '+privateError.message);return}
+ const privateData=Array.isArray(privateRows)?privateRows[0]:privateRows;
+ $('lessonId').value=data.id;$('title').value=data.title;$('slug').value=data.slug;$('summary').value=data.summary||'';$('content').value=privateData?.lesson_content||'';$('video').value=privateData?.video_url||'';$('area').value=data.learning_areas.slug;$('level').value=data.levels.code;$('editorHeading').textContent='Edit lesson';show('extras');await loadExtras();$('editor').scrollIntoView({behavior:'smooth'})
 }
 async function loadExtras(){
  const id=$('lessonId').value;if(!id)return;
