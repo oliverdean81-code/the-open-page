@@ -6,6 +6,7 @@
 <header><div class="brand">THE OPEN PAGE<small>English Through Literature</small></div><nav><a href="index.html">Home</a><a href="news.html">News</a><a href="stories.html">Short Stories</a><a href="poetry.html">Poetry</a></nav></header>
 <main><a class="back" id="backLink" href="index.html">← Back to lessons</a><div id="lesson"><p>Loading lesson…</p></div></main><footer><strong>THE OPEN PAGE</strong><br>Read. Discover. Think. Express.</footer>
 <script>
+function formatActivityType(s){return String(s||'').replace(/-/g,' ').replace(/\b\w/g,ch=>ch.toUpperCase())}
 const client=window.supabase.createClient('https://cqdtodyknixyhbcmgrxh.supabase.co','sb_publishable_arlnZNY8-D3A-bVZ8Qx04w_3PtFlEX3'),root=document.getElementById('lesson');
 function el(tag,text,cls){const x=document.createElement(tag);x.textContent=text||'';if(cls)x.className=cls;return x}
 function panel(title){const p=document.createElement('section');p.className='panel';p.appendChild(el('h2',title));return p}
@@ -21,7 +22,7 @@ root.appendChild(el('p',(area?.name||'')+' · '+(level?.code||''),'meta'));root.
 if(privateData?.video_url){const p=panel('Video lesson'),a=el('a','Watch video','video-link');a.href=privateData.video_url;a.target='_blank';a.rel='noopener noreferrer';p.appendChild(a);root.appendChild(p)}
 if(privateData?.lesson_content){const p=panel('Reading');p.appendChild(el('div',privateData.lesson_content,'lesson-text'));root.appendChild(p)}
 const {data:vocab,error:ve}=await client.from('vocabulary').select('word,definition,example').eq('lesson_id',lesson.id).order('sort_order');if(ve)throw ve;if(vocab?.length){const p=panel('Vocabulary');vocab.slice().sort((a,b)=>String(a.word||'').localeCompare(String(b.word||''),undefined,{sensitivity:'base'})).forEach(v=>{const d=el('div','','word');d.appendChild(el('strong',v.word));d.appendChild(el('div',v.definition));if(v.example)d.appendChild(el('em',v.example));p.appendChild(d)});root.appendChild(p)}
-const {data:acts,error:ae2}=await client.from('activities').select('activity_type,prompt,suggested_answer').eq('lesson_id',lesson.id).order('sort_order');if(ae2)throw ae2;if(acts?.length){const p=panel('Activities');acts.forEach(a=>{const d=el('div','','activity');d.appendChild(el('small',a.activity_type));d.appendChild(el('p',a.prompt));if(a.suggested_answer){const details=el('details',''),summary=el('summary','Suggested answer');details.appendChild(summary);details.appendChild(el('p',a.suggested_answer));d.appendChild(details)}p.appendChild(d)});root.appendChild(p)}
+const {data:acts,error:ae2}=await client.from('activities').select('activity_type,prompt,suggested_answer').eq('lesson_id',lesson.id).order('sort_order');if(ae2)throw ae2;if(acts?.length){const p=panel('Activities');acts.forEach(a=>{const d=el('div','','activity');d.appendChild(el('small',formatActivityType(a.activity_type)));d.appendChild(el('p',a.prompt));if(a.suggested_answer){const details=el('details',''),summary=el('summary','Suggested answer');details.appendChild(summary);details.appendChild(el('p',a.suggested_answer));d.appendChild(details)}p.appendChild(d)});root.appendChild(p)}
 }catch(e){root.replaceChildren(el('p','This lesson could not be loaded: '+e.message))}}
 load();
 </script></body></html>
