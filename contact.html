@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact | The Open Page</title>
+<style>
+:root { --green:#344b3d; --gold:#b39a68; --cream:#f7f4ec; --ink:#30352f; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:Georgia,serif; color:var(--ink); background:var(--cream); line-height:1.7; }
+header { display:flex; justify-content:space-between; align-items:center; gap:18px; padding:22px 7%; background:#fffdf8; flex-wrap:wrap; }
+.logo { color:var(--green); font-size:25px; font-weight:bold; letter-spacing:2px; }
+nav a { color:var(--green); text-decoration:none; margin-left:20px; font-size:15px; }
+nav a:hover { color:var(--gold); }
+.hero { background:var(--green); color:white; text-align:center; padding:65px 20px; }
+.hero h1 { font-size:clamp(36px,5vw,52px); font-weight:normal; margin:10px 0; }
+.hero p { margin:0 auto; max-width:650px; }
+main { max-width:760px; margin:0 auto; padding:50px 22px 75px; }
+.panel { background:white; padding:34px; border-top:4px solid var(--gold); }
+h2 { color:var(--green); font-weight:normal; font-size:29px; margin-top:0; }
+label { display:block; color:var(--green); font-weight:bold; margin:18px 0 6px; }
+input, textarea { width:100%; padding:13px; border:1px solid #d8d0c1; border-radius:3px; font:16px Georgia,serif; color:var(--ink); background:#fffefa; }
+textarea { min-height:170px; resize:vertical; }
+button { margin-top:22px; border:0; border-radius:3px; padding:14px 26px; background:var(--green); color:white; font:16px Georgia,serif; cursor:pointer; }
+button:hover { background:#26392e; }
+.note { color:#62665f; font-size:14px; }
+footer { background:var(--green); color:white; text-align:center; padding:30px 20px; line-height:1.8; }
+@media(max-width:700px) { header { justify-content:center; text-align:center; } nav { text-align:center; } nav a { margin:6px 9px; display:inline-block; } .panel { padding:24px 18px; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">THE OPEN PAGE</div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="news.html">News</a>
+    <a href="stories.html">Short Stories</a>
+    <a href="poetry.html">Poetry</a>
+    <a href="about.html">About</a>
+    <a href="contact.html">Contact</a>
+    <a href="teacher.html">Teacher Login</a>
+    <a href="student.html">Student Login</a>
+  </nav>
+</header>
+<section class="hero">
+  <h1>Contact</h1>
+  <p>Have a question or would like to get in touch? Send a message using the form below.</p>
+</section>
+<main>
+  <section class="panel">
+    <h2>Send us a message</h2>
+    <p>We welcome your questions, comments and enquiries about The Open Page.</p>
+    <form action="https://formsubmit.app/f/k2u8vxjv8e" method="POST">
+      <label for="name">Name</label>
+      <input id="name" type="text" name="name" autocomplete="name" required>
+      <label for="email">Email address</label>
+      <input id="email" type="email" name="email" autocomplete="email" required>
+      <label for="subject">Subject</label>
+      <input id="subject" type="text" name="subject" required>
+      <label for="message">Message</label>
+      <textarea id="message" name="message" required></textarea>
+      <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
+      <button type="submit">Send message</button>
+    </form>
+    <p class="note">Your contact details will only be used to respond to your enquiry.</p>
+  </section>
+</main>
+<footer>
+  <strong>THE OPEN PAGE</strong><br>
+  English Through Literature<br>
+  Read. Discover. Think. Express.
+</footer>
+</body>
+</html>
