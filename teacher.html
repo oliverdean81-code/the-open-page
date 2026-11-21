@@ -49,13 +49,13 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 <h3>Your sections</h3><div id="sectionList"><p class="muted">Loading sections…</p></div>
 <div class="divider" style="border-top:1px solid var(--line);margin:24px 0"></div>
 <h3>Add a topic or video</h3>
-<label for="topicSection">Choose a section</label><select id="topicSection"><option value="">Create a section first</option></select>
+<input id="topicId" type="hidden"><label for="topicSection">Choose a section</label><select id="topicSection"><option value="">Create a section first</option></select>
 <label for="topicTitle">Topic title</label><input id="topicTitle" placeholder="e.g. What is Literature?">
 <label for="topicSummary">Short introduction (optional)</label><textarea id="topicSummary" style="min-height:85px"></textarea>
 <label for="topicVideo">Video link (optional)</label><input id="topicVideo" type="url" placeholder="https://www.youtube.com/watch?v=...">
 <label for="topicMaterial">Notes or supporting learning material (optional)</label><textarea id="topicMaterial" placeholder="Add lecture notes, reading material or instructions."></textarea>
 <label for="topicStatus">Topic status</label><select id="topicStatus"><option value="draft">Save as draft</option><option value="published">Publish topic</option></select>
-<div class="actions"><button id="createTopicBtn">Add topic</button></div>
+<div class="actions"><button type="button" id="createTopicBtn">Add topic</button><button type="button" id="cancelTopicEditBtn" class="secondary" style="display:none">Cancel editing</button></div>
 <div id="topicMsg" class="status">Choose a section and enter a topic title.</div>
 </div>
 <div class="panel" id="editor">
@@ -158,7 +158,7 @@ async function loadSections(){
   if(topicError){topics.textContent='Could not load topics: '+topicError.message;continue}
   topics.innerHTML='';
   if(!items.length){topics.textContent='No topics added yet.';continue}
-  items.forEach(t=>{const line=document.createElement('div');line.style.padding='8px 0';line.style.borderTop='1px solid var(--line)';const name=document.createElement('strong');name.textContent=t.title;const info=document.createElement('small');info.textContent=(t.video_url?'Video added':'No video link')+' · '+t.status;line.append(name,info);topics.append(line)})
+  items.forEach(t=>{const line=document.createElement('div');line.style.padding='8px 0';line.style.borderTop='1px solid var(--line)';const name=document.createElement('strong');name.textContent=t.title;const info=document.createElement('small');info.textContent=(t.video_url?'Video added':'No video link')+' · '+t.status;const edit=document.createElement('button');edit.type='button';edit.className='secondary';edit.textContent='Edit topic';edit.style.marginLeft='12px';edit.addEventListener('click',()=>editSectionTopic(t,s.id));line.append(name,info,edit);topics.append(line)})
  }
 }
 $('createSectionBtn').addEventListener('click',async()=>{
@@ -169,14 +169,39 @@ $('createSectionBtn').addEventListener('click',async()=>{
  if(error){message('sectionMsg','Could not save section: '+error.message);return}
  $('sectionTitle').value='';$('sectionDescription').value='';message('sectionMsg','Your section has been created.');await loadSections()
 });
+function resetTopicEditor(){
+ $('topicId').value='';
+ ['topicTitle','topicSummary','topicVideo','topicMaterial'].forEach(id=>$(id).value='');
+ $('createTopicBtn').textContent='Add topic';
+ $('cancelTopicEditBtn').style.display='none';
+ message('topicMsg','Choose a section and enter a topic title.');
+}
+function editSectionTopic(topic,sectionId){
+ $('topicId').value=topic.id;
+ $('topicSection').value=sectionId;
+ $('topicTitle').value=topic.title||'';
+ $('topicSummary').value=topic.summary||'';
+ $('topicVideo').value=topic.video_url||'';
+ $('topicMaterial').value=topic.learning_material||'';
+ $('topicStatus').value=topic.status||'draft';
+ $('createTopicBtn').textContent='Save topic changes';
+ $('cancelTopicEditBtn').style.display='inline-block';
+ message('topicMsg','Editing "'+topic.title+'". Add the video link, then save your changes.');
+ $('topicTitle').scrollIntoView({behavior:'smooth',block:'center'});
+}
+$('cancelTopicEditBtn').addEventListener('click',resetTopicEditor);
 $('createTopicBtn').addEventListener('click',async()=>{
+ const id=$('topicId').value;
  const section_id=$('topicSection').value,title=$('topicTitle').value.trim();if(!section_id){message('topicMsg','Please create or choose a section first.');return}
  if(!title){message('topicMsg','Please enter a topic title.');return}
  const slug=safeSlug(title);if(!slug){message('topicMsg','Please use a title containing letters or numbers.');return}
- message('topicMsg','Saving topic…');
- const {error}=await supabaseClient.from('section_topics').insert({section_id,title,slug,summary:$('topicSummary').value.trim()||null,video_url:$('topicVideo').value.trim()||null,learning_material:$('topicMaterial').value.trim()||null,status:$('topicStatus').value});
- if(error){message('topicMsg','Could not save topic: '+error.message);return}
- ['topicTitle','topicSummary','topicVideo','topicMaterial'].forEach(id=>$(id).value='');message('topicMsg','Your topic has been added.');await loadSections()
+ message('topicMsg',id?'Saving topic changes…':'Saving topic…');
+ const record={section_id,title,slug,summary:$('topicSummary').value.trim()||null,video_url:$('topicVideo').value.trim()||null,learning_material:$('topicMaterial').value.trim()||null,status:$('topicStatus').value};
+ const result=id?await supabaseClient.from('section_topics').update(record).eq('id',id):await supabaseClient.from('section_topics').insert(record);
+ if(result.error){message('topicMsg','Could not save topic: '+result.error.message);return}
+ resetTopicEditor();
+ message('topicMsg',id?'Topic changes saved.':'Your topic has been added.');
+ await loadSections()
 });
 async function saveLesson(status){
  const id=$('lessonId').value;const title=$('title').value.trim(),slug=safeSlug($('slug').value||title);
