@@ -90,7 +90,8 @@ $('forgotPassword').addEventListener('click',async(e)=>{
  const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/reset-password.html'});
  if(error){message('loginMsg','Could not send reset email: '+error.message);return}
  message('loginMsg','Password reset email sent. Check your inbox and follow the link to choose a new password.');
-});\n$('loginBtn').addEventListener('click',async()=>{
+});
+$('loginBtn').addEventListener('click',async()=>{
  message('loginMsg','Signing in…');const {data,error}=await supabaseClient.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
  if(error){message('loginMsg','Sign-in failed: '+error.message);return}currentUser=data.user;await enterDashboard()
 });
