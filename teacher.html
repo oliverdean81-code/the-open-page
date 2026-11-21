@@ -305,7 +305,7 @@ async function editLesson(id){
 }
 async function loadExtras(){
  const id=$('lessonId').value;if(!id)return;
- const {data:v}=await supabaseClient.from('vocabulary').select('*').eq('lesson_id',id).order('sort_order');$('vocabList').innerHTML=(v||[]).map(x=>'<div>• '+escapeText(x.word)+' — '+escapeText(x.definition)+'</div>').join('')||'No vocabulary added yet.';
+ const {data:v}=await supabaseClient.from('vocabulary').select('*').eq('lesson_id',id).order('sort_order');const sortedVocab=(v||[]).slice().sort((a,b)=>String(a.word||'').localeCompare(String(b.word||''),undefined,{sensitivity:'base'}));$('vocabList').innerHTML=sortedVocab.map(x=>'<div>• '+escapeText(x.word)+' — '+escapeText(x.definition)+'</div>').join('')||'No vocabulary added yet.';
  const {data:a}=await supabaseClient.from('activities').select('*').eq('lesson_id',id).order('sort_order');$('activityList').innerHTML=(a||[]).map(x=>'<div>• '+escapeText(x.activity_type)+': '+escapeText(x.prompt)+'</div>').join('')||'No activities added yet.'
 }
 function escapeText(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
