@@ -21,6 +21,7 @@ button{background:var(--green);color:white;border:0;border-radius:6px;padding:12
 button.secondary{background:#e9e5db;color:var(--green)}
 .status{background:#f1eee6;padding:12px;border-radius:6px;margin-top:16px;font:14px Arial,sans-serif}
 .hidden{display:none!important}.links{display:flex;gap:18px;flex-wrap:wrap;margin-top:20px}.links a{color:var(--green)}
+.membership{margin-top:24px;padding:20px;border:1px solid #d8d0bd;border-radius:8px;background:#fbfaf6}.membership h2{margin-top:0}.membership button{margin-top:10px}
 @media(max-width:600px){header{justify-content:center;text-align:center}nav a{margin:0 8px}}
 </style>
 </head>
@@ -39,6 +40,14 @@ button.secondary{background:#e9e5db;color:var(--green)}
 <section class="panel hidden" id="welcome">
 <h1>You're signed in</h1><p>Welcome to The Open Page. Choose an area to begin learning.</p>
 <div class="links"><a href="news.html">English Through the News</a><a href="index.html#stories">Short Stories</a><a href="index.html#poetry">Poetry</a></div>
+<div class="membership" id="membershipPanel">
+<h2>Membership</h2>
+<p><strong>The Open Page Membership — NZ$15 per month</strong></p>
+<p class="muted">Includes a 3-day free trial, then NZ$15 per month. Introduction to English Literature remains free for everyone.</p>
+<p id="membershipStatus">Checking your membership…</p>
+<button id="subscribeButton">Start your 3-day free trial</button>
+<p class="muted" id="membershipNote">You will be taken to Stripe's secure checkout. You can review the details before confirming.</p>
+</div>
 <div class="actions"><button id="signOut" class="secondary">Sign out</button></div>
 </section>
 </main>
@@ -48,7 +57,42 @@ const PUBLISHABLE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 const client=window.supabase.createClient(PROJECT_URL,PUBLISHABLE_KEY);
 const $=id=>document.getElementById(id);
 function status(t){$('message').textContent=t}
-function signedIn(){ $('authPanel').classList.add('hidden');$('welcome').classList.remove('hidden') }
+function signedIn(){ $('authPanel').classList.add('hidden');$('welcome').classList.remove('hidden');loadMembership() }
+async function loadMembership(){
+ $('membershipStatus').textContent='Checking your membership…';
+ const {data:{session}}=await client.auth.getSession();
+ if(!session){$('membershipStatus').textContent='Please sign in to view membership options.';return}
+ const {data,error}=await client.from('memberships').select('status,trial_end,current_period_end').eq('user_id',session.user.id).maybeSingle();
+ if(error){$('membershipStatus').textContent='Your membership status could not be checked just now.';return}
+ if(data && ['active','trialing'].includes(data.status)){
+   const end=data.trial_end||data.current_period_end;
+   $('membershipStatus').textContent=data.status==='trialing'?'Your membership is in its free trial.':'Your membership is active.';
+   if(end) $('membershipStatus').textContent+=' Current period ends: '+new Date(end).toLocaleDateString();
+   $('subscribeButton').classList.add('hidden');
+   $('membershipNote').textContent='Thank you for supporting The Open Page.';
+ }else{
+   $('membershipStatus').textContent='You do not currently have an active membership.';
+   $('subscribeButton').classList.remove('hidden');
+ }
+}
+$('subscribeButton').addEventListener('click',async()=>{
+ const {data:{session}}=await client.auth.getSession();
+ if(!session){$('membershipStatus').textContent='Please sign in first.';return}
+ $('subscribeButton').disabled=true;$('subscribeButton').textContent='Connecting to Stripe…';
+ try{
+   const response=await fetch(PROJECT_URL+'/functions/v1/create-checkout-session',{
+     method:'POST',
+     headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':PUBLISHABLE_KEY},
+     body:JSON.stringify({})
+   });
+   const result=await response.json();
+   if(!response.ok||!result.url) throw new Error(result.error||result.message||'Checkout could not be started.');
+   window.location.href=result.url;
+ }catch(error){
+   $('membershipStatus').textContent=error.message;
+   $('subscribeButton').disabled=false;$('subscribeButton').textContent='Start your 3-day free trial';
+ }
+});
 $('signIn').addEventListener('click',async()=>{
  const email=$('email').value.trim(),password=$('password').value;
  if(!email||!password){status('Please enter your email and password.');return}
