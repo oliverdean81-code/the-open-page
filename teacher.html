@@ -4,48 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Teacher Dashboard | The Open Page</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-/* Content Production Tracker — stored locally in this browser */
-const trackerStorageKey='theOpenPageContentTrackerV1';
-function getTrackerItems(){
- try{return JSON.parse(localStorage.getItem(trackerStorageKey)||'[]')}catch(e){return []}
-}
-function saveTrackerItems(items){localStorage.setItem(trackerStorageKey,JSON.stringify(items))}
-function renderTracker(){
- const items=getTrackerItems();
- $('trackerTotal').textContent=items.length;
- $('trackerPublished').textContent=items.filter(item=>item.status==='Published').length;
- const list=$('trackerList');list.innerHTML='';
- if(!items.length){list.innerHTML='<p class="muted">No content tasks yet. Add your first item above.</p>';return}
- const order=['Idea','Writing','Recording','Uploading','Published'];
- items.forEach(item=>{
-  const card=document.createElement('div');card.className='lesson';
-  const top=document.createElement('div');top.style.cssText='display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start';
-  const details=document.createElement('div');details.style.cssText='flex:1;min-width:220px';
-  const title=document.createElement('strong');title.textContent=item.title;
-  const meta=document.createElement('small');meta.textContent=[item.project,item.level,item.priority||'Anytime'].filter(Boolean).join(' · ')+' · Updated '+new Date(item.updatedAt).toLocaleDateString();
-  details.append(title,meta);
-  if(item.notes){const notes=document.createElement('p');notes.className='muted';notes.style.margin='8px 0 0';notes.textContent='Next step: '+item.notes;details.append(notes)}
-  const controls=document.createElement('div');controls.style.cssText='display:flex;gap:8px;flex-wrap:wrap;align-items:center';
-  const priority=document.createElement('select');priority.style.width='auto';priority.style.minWidth='112px';priority.setAttribute('aria-label','Priority for '+item.title);['Anytime','Soon','Urgent'].forEach(level=>{const option=document.createElement('option');option.value=level;option.textContent=level;if((item.priority||'Anytime')===level)option.selected=true;priority.append(option)});priority.addEventListener('change',()=>{const all=getTrackerItems();const target=all.find(x=>x.id===item.id);if(target){target.priority=priority.value;target.updatedAt=new Date().toISOString();saveTrackerItems(all);renderTracker()}});
-  const status=document.createElement('select');status.style.width='auto';status.style.minWidth='130px';status.setAttribute('aria-label','Status for '+item.title);
-  order.forEach(stage=>{const option=document.createElement('option');option.value=stage;option.textContent=stage;if(item.status===stage)option.selected=true;status.append(option)});
-  status.addEventListener('change',()=>{const all=getTrackerItems();const target=all.find(x=>x.id===item.id);if(target){target.status=status.value;target.updatedAt=new Date().toISOString();saveTrackerItems(all);renderTracker()}});
-  const remove=document.createElement('button');remove.type='button';remove.className='secondary';remove.textContent='Delete';remove.addEventListener('click',()=>{if(!confirm('Delete “'+item.title+'” from your content tracker?'))return;saveTrackerItems(getTrackerItems().filter(x=>x.id!==item.id));renderTracker();$('trackerMessage').textContent='Content item deleted.'});
-  controls.append(priority,status,remove);top.append(details,controls);card.append(top);list.append(card);
- });
-}
-$('addTrackerItemBtn').addEventListener('click',()=>{
- const title=$('trackerTitle').value.trim();
- if(!title){$('trackerMessage').textContent='Please enter a title for this content item.';return}
- const items=getTrackerItems();
- items.unshift({id:Date.now().toString(36)+Math.random().toString(36).slice(2,8),title,project:$('trackerProject').value,level:$('trackerLevel').value,status:$('trackerStatus').value,priority:$('trackerPriority').value||'Anytime',notes:$('trackerNotes').value.trim(),updatedAt:new Date().toISOString()});
- saveTrackerItems(items);
- $('trackerTitle').value='';$('trackerNotes').value='';$('trackerStatus').value='Idea';$('trackerLevel').value='';
- renderTracker();$('trackerMessage').textContent='Added to your content tracker.';
-});
-renderTracker();
-</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--green:#344B3D;--cream:#F7F4EC;--gold:#B39A68;--ink:#26352d;--line:#ddd8cc}
 *{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font:16px/1.5 Georgia,serif}
@@ -768,6 +727,75 @@ $('addActivityBtn').addEventListener('click',async()=>{
   resetActivityEditor();await loadExtras();message('saveMsg','Activity added.');
  }
 });
+
+/* Shared backup helpers */
+function downloadTextFile(filename,content,mime){const blob=new Blob([content],{type:mime||'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url)}
+function readJsonFile(file,callback){const reader=new FileReader();reader.onload=()=>{try{callback(JSON.parse(reader.result))}catch(e){alert('That backup file is not valid JSON.')}};reader.readAsText(file)}
+
+/* Content Production Tracker */
+const trackerStorageKey='theOpenPageContentTrackerV1';
+function getTrackerItems(){try{return JSON.parse(localStorage.getItem(trackerStorageKey)||'[]')}catch(e){return []}}
+function saveTrackerItems(items){localStorage.setItem(trackerStorageKey,JSON.stringify(items))}
+function renderTracker(){
+ const items=getTrackerItems();$('trackerTotal').textContent=items.length;$('trackerPublished').textContent=items.filter(x=>x.status==='Published').length;
+ const list=$('trackerList');list.innerHTML='';if(!items.length){list.innerHTML='<p class="muted">No content tasks yet. Add your first item above.</p>';return}
+ const stages=['Idea','Writing','Recording','Uploading','Published'];
+ items.forEach(item=>{
+  const card=document.createElement('div');card.className='lesson';const top=document.createElement('div');top.style.cssText='display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start';
+  const details=document.createElement('div');details.style.cssText='flex:1;min-width:220px';const title=document.createElement('strong');title.textContent=item.title;
+  const meta=document.createElement('small');meta.textContent=[item.project,item.level,item.priority||'Anytime'].filter(Boolean).join(' · ')+' · Updated '+new Date(item.updatedAt).toLocaleDateString();details.append(title,meta);
+  if(item.notes){const note=document.createElement('p');note.className='muted';note.textContent='Next step: '+item.notes;details.append(note)}
+  const controls=document.createElement('div');controls.style.cssText='display:flex;gap:8px;flex-wrap:wrap;align-items:center';
+  const priority=document.createElement('select');priority.style.width='auto';priority.style.minWidth='112px';priority.setAttribute('aria-label','Priority for '+item.title);
+  ['Anytime','Soon','Urgent'].forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;if((item.priority||'Anytime')===v)o.selected=true;priority.append(o)});
+  priority.addEventListener('change',()=>{const all=getTrackerItems(),x=all.find(y=>y.id===item.id);if(x){x.priority=priority.value;x.updatedAt=new Date().toISOString();saveTrackerItems(all);renderTracker()}});
+  const status=document.createElement('select');status.style.width='auto';status.style.minWidth='130px';status.setAttribute('aria-label','Status for '+item.title);
+  stages.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;if(item.status===v)o.selected=true;status.append(o)});
+  status.addEventListener('change',()=>{const all=getTrackerItems(),x=all.find(y=>y.id===item.id);if(x){x.status=status.value;x.updatedAt=new Date().toISOString();saveTrackerItems(all);renderTracker()}});
+  const del=document.createElement('button');del.type='button';del.className='secondary';del.textContent='Delete';del.addEventListener('click',()=>{if(confirm('Delete this content task?')){saveTrackerItems(getTrackerItems().filter(x=>x.id!==item.id));renderTracker()}});
+  controls.append(priority,status,del);top.append(details,controls);card.append(top);list.append(card);
+ });
+}
+$('addTrackerItemBtn').addEventListener('click',()=>{const title=$('trackerTitle').value.trim();if(!title){$('trackerMessage').textContent='Please enter a title.';return}
+ const all=getTrackerItems();all.unshift({id:Date.now().toString(36)+Math.random().toString(36).slice(2,8),title,project:$('trackerProject').value,level:$('trackerLevel').value,status:$('trackerStatus').value,priority:$('trackerPriority').value||'Anytime',notes:$('trackerNotes').value.trim(),updatedAt:new Date().toISOString()});
+ saveTrackerItems(all);$('trackerTitle').value='';$('trackerNotes').value='';$('trackerStatus').value='Idea';$('trackerLevel').value='';renderTracker();$('trackerMessage').textContent='Added to your content tracker.'});
+$('exportTrackerJson').addEventListener('click',()=>downloadTextFile('open-page-content-tracker-backup.json',JSON.stringify(getTrackerItems(),null,2),'application/json'));
+$('exportTrackerCsv').addEventListener('click',()=>{const rows=[['Title','Project','Level','Status','Priority','Notes','Updated'],...getTrackerItems().map(x=>[x.title,x.project,x.level,x.status,x.priority||'Anytime',x.notes,x.updatedAt])];const csv=rows.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');downloadTextFile('open-page-content-tracker.csv',csv,'text/csv;charset=utf-8')});
+$('importTrackerJson').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;readJsonFile(f,data=>{if(!Array.isArray(data)||!data.every(x=>x&&x.title&&x.id)){alert('This does not look like a tracker backup.');return}if(confirm('Restore this backup? It will replace the tracker items currently saved in this browser.')){saveTrackerItems(data);renderTracker();$('trackerMessage').textContent='Tracker backup restored.'}});e.target.value=''});
+renderTracker();
+
+/* Weekly planner */
+const plannerKey='theOpenPageWeeklyPlannerV1';
+function getPlanner(){try{return JSON.parse(localStorage.getItem(plannerKey)||'[]')}catch(e){return []}}
+function renderPlanner(){const list=$('plannerList'),items=getPlanner();list.innerHTML='';if(!items.length){list.innerHTML='<p class="muted">No tasks planned yet.</p>';return}
+ ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','Any day'].forEach(day=>{const group=items.filter(x=>x.day===day);if(!group.length)return;const h=document.createElement('h3');h.textContent=day;list.append(h);
+ group.forEach(item=>{const row=document.createElement('div');row.className='lesson';row.style.cssText='display:flex;gap:12px;align-items:center';const check=document.createElement('input');check.type='checkbox';check.checked=!!item.done;check.style.width='auto';check.addEventListener('change',()=>{const all=getPlanner(),x=all.find(y=>y.id===item.id);if(x){x.done=check.checked;localStorage.setItem(plannerKey,JSON.stringify(all));renderPlanner()}});
+ const text=document.createElement('span');text.textContent=item.task;text.style.flex='1';if(item.done)text.style.textDecoration='line-through';const del=document.createElement('button');del.type='button';del.className='secondary';del.textContent='Delete';del.addEventListener('click',()=>{localStorage.setItem(plannerKey,JSON.stringify(getPlanner().filter(x=>x.id!==item.id)));renderPlanner()});row.append(check,text,del);list.append(row)})})}
+$('addPlannerTask').addEventListener('click',()=>{const task=$('plannerTask').value.trim();if(!task){$('plannerMessage').textContent='Please enter a task.';return}const all=getPlanner();all.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),task,day:$('plannerDay').value,done:false});localStorage.setItem(plannerKey,JSON.stringify(all));$('plannerTask').value='';renderPlanner();$('plannerMessage').textContent='Task added. Keep the list manageable.'});renderPlanner();
+
+/* Content library */
+const libraryKey='theOpenPageContentLibraryV1';
+function getLibrary(){try{return JSON.parse(localStorage.getItem(libraryKey)||'[]')}catch(e){return []}}
+function renderLibrary(){const list=$('libraryList'),items=getLibrary();list.innerHTML='';if(!items.length){list.innerHTML='<p class="muted">No saved materials yet.</p>';return}
+ items.forEach(item=>{const card=document.createElement('article');card.className='lesson';const title=document.createElement('strong');title.textContent=item.title;const meta=document.createElement('small');meta.textContent=[item.project,item.type,item.level].filter(Boolean).join(' · ');const notes=document.createElement('p');notes.style.whiteSpace='pre-wrap';notes.textContent=item.notes||'No notes added.';
+ const actions=document.createElement('div');actions.className='actions';const copy=document.createElement('button');copy.type='button';copy.className='secondary';copy.textContent='Copy material';copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(item.notes||'');$('libraryMessage').textContent='Material copied.'}catch(e){$('libraryMessage').textContent='Copy is unavailable in this browser.'}});
+ const del=document.createElement('button');del.type='button';del.className='secondary';del.textContent='Delete';del.addEventListener('click',()=>{if(confirm('Delete this saved library item?')){localStorage.setItem(libraryKey,JSON.stringify(getLibrary().filter(x=>x.id!==item.id)));renderLibrary()}});actions.append(copy,del);card.append(title,meta,notes,actions);list.append(card)})}
+$('saveLibraryItem').addEventListener('click',()=>{const title=$('libraryTitle').value.trim();if(!title){$('libraryMessage').textContent='Please enter a title.';return}const all=getLibrary();all.unshift({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),title,project:$('libraryProject').value,type:$('libraryType').value,level:$('libraryLevel').value,notes:$('libraryNotes').value.trim(),savedAt:new Date().toISOString()});localStorage.setItem(libraryKey,JSON.stringify(all));$('libraryTitle').value='';$('libraryNotes').value='';renderLibrary();$('libraryMessage').textContent='Saved in this browser.'});
+$('exportLibrary').addEventListener('click',()=>downloadTextFile('open-page-content-library-backup.json',JSON.stringify(getLibrary(),null,2),'application/json'));
+$('importLibrary').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;readJsonFile(f,data=>{if(!Array.isArray(data)||!data.every(x=>x&&x.title&&x.id)){alert('This does not look like a library backup.');return}if(confirm('Restore this backup? It will replace the library currently saved in this browser.')){localStorage.setItem(libraryKey,JSON.stringify(data));renderLibrary();$('libraryMessage').textContent='Library backup restored.'}});e.target.value=''});renderLibrary();
+
+/* Reusable lesson templates */
+const lessonTemplates={
+ news:{title:'News lesson – [topic]',summary:'Explore a current news story, build vocabulary and consider different perspectives.',content:'## Before you read\nWhat do you already know about this topic?\n\n## Reading\n[Paste or write the news article here.]\n\n## Key vocabulary\n[Add vocabulary, definitions and examples.]\n\n## Comprehension questions\n1. [Question]\n2. [Question]\n3. [Question]\n\n## Suggested answers\n[Add suggested answers.]\n\n## Discussion\n[Add questions that encourage learners to explain their views.]\n\n## Writing task\n[Add a short writing activity.]'},
+ story:{title:'Short story lesson – [story title]',summary:'Read and explore a short story through language, character, theme and interpretation.',content:'## Before reading\nIntroduce the author, setting or central idea.\n\n## The story\n[Paste or write the story text here.]\n\n## Key vocabulary\n[Add vocabulary, definitions and examples.]\n\n## Comprehension\n[Add questions about events, characters and details.]\n\n## Literary discussion\n[Explore character, setting, imagery, theme and interpretation.]\n\n## Writing task\n[Add a response or creative writing activity.]'},
+ poetry:{title:'Poetry lesson – [poem title]',summary:'Explore a poem through language, imagery, sound, structure and interpretation.',content:'## About the poet and poem\n[Add a short introduction.]\n\n## The poem\n[Paste the poem or an authorised extract.]\n\n## Vocabulary and imagery\n[Explain important words, images and figurative language.]\n\n## First impressions\n[Add initial response questions.]\n\n## Analysis and interpretation\n[Explore voice, form, sound, structure and themes.]\n\n## Writing task\n[Add an analytical or creative response.]'},
+ general:{title:'Reading lesson – [topic]',summary:'Develop reading comprehension, vocabulary and clear written expression.',content:'## Learning aims\n[What will learners practise?]\n\n## Reading text\n[Paste or write the text here.]\n\n## Key vocabulary\n[Add vocabulary and examples.]\n\n## Comprehension questions\n[Add questions and suggested answers.]\n\n## Discussion\n[Add discussion questions.]\n\n## Writing task\n[Add a short writing activity.]'}
+};
+$('applyLessonTemplate').addEventListener('click',()=>{const t=lessonTemplates[$('templateType').value],level=$('templateLevel').value;if($('lessonId').value&&!confirm('This will replace the current lesson title, summary and content. Continue?'))return;$('title').value=t.title;$('summary').value=t.summary;$('content').value=t.content;$('level').value=level;$('area').value=$('templateType').value==='news'?'news':$('templateType').value==='story'?'short-stories':$('templateType').value==='poetry'?'poetry':'news';$('templateMessage').textContent='Template added to the lesson editor. Replace bracketed instructions, then save when ready.';$('editor').scrollIntoView({behavior:'smooth'});$('title').focus()});
+
+/* Activity preparation prompt builder */
+$('createActivityBrief').addEventListener('click',()=>{const source=$('activitySourceText').value.trim();if(!source){$('activityBriefOutput').value='Please paste your lesson text first.';return}const level=$('activityGenLevel').value,type=$('activityGenType').value;$('activityBriefOutput').value='Prepare '+type.toLowerCase()+' for English-language learners at '+level+' level, using only the source text below.\n\nRequirements:\n- Match the language and difficulty to '+level+'.\n- Keep comprehension questions answerable from the source.\n- Provide suggested answers separately.\n- Do not invent facts or present unsupported assumptions as facts.\n- Use clear, natural English and headings.\n- Include an answer key where appropriate.\n\nSOURCE TEXT:\n'+source});
+$('copyActivityBrief').addEventListener('click',async()=>{const brief=$('activityBriefOutput').value;if(!brief){$('templateMessage').textContent='Create an activity brief first.';return}try{await navigator.clipboard.writeText(brief);$('templateMessage').textContent='Brief copied. Paste it into ChatGPT to develop a draft.'}catch(e){$('templateMessage').textContent='Copy is unavailable; select and copy the brief manually.'}});
 </script>
 </body>
 </html>
