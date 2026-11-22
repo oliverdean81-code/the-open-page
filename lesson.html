@@ -371,30 +371,76 @@ async function load() {
 
         const form = document.createElement('form');
 
-        form.addEventListener('submit',event => {
+        const {data:{session:studentSession}} = await client.auth.getSession();
+        let savedResponse = null;
+        if(studentSession) {
+          const {data:existingResponse,error:responseLoadError} = await client
+            .from('student_activity_responses')
+            .select('answer_text,submitted_at')
+            .eq('activity_id',a.id)
+            .eq('user_id',studentSession.user.id)
+            .maybeSingle();
+          if(responseLoadError) console.warn('Could not load saved answer:',responseLoadError.message);
+          savedResponse = existingResponse;
+        }
 
+        form.addEventListener('submit',async event => {
           event.preventDefault();
 
+          const {data:{session},error:sessionError} = await client.auth.getSession();
+          if(sessionError || !session) {
+            let notice = d.querySelector('.answer-status');
+            if(!notice) { notice=el('p','','answer-status'); form.appendChild(notice); }
+            notice.textContent='Please sign in to your student account before submitting an answer. ';
+            const signInLink=el('a','Sign in here');
+            signInLink.href='student.html';
+            notice.appendChild(signInLink);
+            return;
+          }
+
+          const answerText=textarea.value.trim();
+          if(!answerText) {
+            textarea.focus();
+            return;
+          }
+
+          button.disabled=true;
+          button.textContent='Saving…';
+          let notice = d.querySelector('.answer-status');
+          if(!notice) { notice=el('p','','answer-status'); form.appendChild(notice); }
+          notice.textContent='Saving your answer…';
+
+          const {error:saveError}=await client
+            .from('student_activity_responses')
+            .upsert({
+              user_id:session.user.id,
+              activity_id:a.id,
+              answer_text:answerText,
+              submitted_at:new Date().toISOString()
+            },{onConflict:'user_id,activity_id'});
+
+          button.disabled=false;
+          button.textContent='Save answer';
+
+          if(saveError) {
+            notice.textContent='Your answer could not be saved: '+saveError.message;
+            return;
+          }
+
+          notice.textContent='Your answer has been saved successfully.';
+          savedResponse={answer_text:answerText,submitted_at:new Date().toISOString()};
+
           let result = d.querySelector('.suggested-answer');
-
           if(!result) {
-
             result = el('div','','suggested-answer');
-
-            result.appendChild(el(
-              'h3',
-              'Suggested answer'
-            ));
-
+            result.appendChild(el('h3','Suggested answer'));
             result.appendChild(el(
               'p',
               a.suggested_answer ||
               'No suggested answer has been provided for this activity.'
             ));
-
             d.appendChild(result);
           }
-
         });
 
         const label = el(
@@ -414,10 +460,11 @@ async function load() {
         textarea.id = 'student-answer-' + index;
         textarea.placeholder = 'Type your answer here…';
         textarea.required = true;
+        if(savedResponse?.answer_text) textarea.value=savedResponse.answer_text;
 
         const button = el(
           'button',
-          'Submit answer',
+          'Save answer',
           'submit-answer'
         );
 
