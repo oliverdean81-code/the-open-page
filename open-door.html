@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Open Door Programme | The Open Page</title>
+<style>
+:root{--green:#344b3d;--gold:#b39a68;--cream:#f7f4ec;--ink:#30352f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--ink);font-family:Georgia,serif;line-height:1.75}
+header{background:#fffdf8;padding:22px 7%;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.brand{font-size:23px;letter-spacing:2px;color:var(--green);font-weight:bold}
+nav a{color:var(--green);text-decoration:none;margin-left:18px}
+nav a:hover{color:#8a7045}
+.hero{background:var(--green);color:var(--cream);text-align:center;padding:70px 20px}
+.kicker{color:#ddc99d;letter-spacing:3px;font-size:12px}
+h1{font-size:clamp(38px,5vw,56px);font-weight:normal;margin:12px 0}
+.hero p{max-width:760px;margin:auto;font-size:18px}
+main{max-width:1000px;margin:auto;padding:48px 22px 70px}
+.intro{text-align:center;max-width:800px;margin:0 auto 35px}
+h2,h3{color:var(--green);font-weight:normal}
+h2{font-size:30px}
+.panel{background:white;border:1px solid #e4dfd3;border-top:4px solid var(--gold);padding:28px;margin:22px 0;border-radius:5px;box-shadow:0 4px 14px rgba(38,53,45,.04)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.tile{background:#fffdf8;padding:22px;border-left:3px solid var(--gold)}
+.tile h3{margin:0 0 8px;font-size:22px}
+.steps{counter-reset:step;list-style:none;padding:0}
+.steps li{counter-increment:step;position:relative;padding:8px 0 18px 48px}
+.steps li:before{content:counter(step);position:absolute;left:0;top:4px;width:30px;height:30px;border-radius:50%;background:#eae6d9;color:var(--green);display:grid;place-items:center}
+.notice{background:#eae6d9;border-radius:5px;padding:22px}
+.notice strong{color:var(--green)}
+.status{display:inline-block;background:#eee9dc;color:var(--green);padding:5px 10px;border-radius:3px;font:13px Arial,sans-serif}
+footer{background:var(--green);color:white;text-align:center;padding:30px}
+@media(max-width:650px){.grid{grid-template-columns:1fr}header{justify-content:center}nav a{margin:0 7px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="brand">THE OPEN PAGE</div>
+ <nav><a href="index.html">Home</a><a href="news.html">News</a><a href="stories.html">Short Stories</a><a href="poetry.html">Poetry</a><a href="beyond-the-page.html">Beyond the Page</a><a href="specialist-courses.html">Specialist Courses</a></nav>
+</header>
+<section class="hero">
+ <div class="kicker">LEARNING SHOULD OPEN DOORS</div>
+ <h1>The Open Door Programme</h1>
+ <p>A community-supported way to help people access learning when the cost of membership would otherwise be a barrier.</p>
+</section>
+<main>
+ <section class="intro">
+  <h2>Pass an opportunity forward</h2>
+  <p>The Open Door Programme is being developed to connect people who can contribute towards a membership with learners who would benefit from access but cannot comfortably afford it. We want sponsored learners to feel like ordinary members of The Open Page, with their circumstances kept private.</p>
+ </section>
+ <section class="panel">
+  <span class="status">Programme in development</span>
+  <h2>Two ways to take part</h2>
+  <div class="grid">
+   <article class="tile">
+    <h3>Request sponsored access</h3>
+    <p>If the cost of membership is a barrier, you will be able to register your interest in receiving a sponsored membership. There will be no public identification of sponsored learners, and we aim to keep the process respectful and straightforward.</p>
+   </article>
+   <article class="tile">
+    <h3>Sponsor a learner</h3>
+    <p>If you are able to help, you will be able to contribute towards the cost of another person's membership. Sponsorship will be offered as a separate choice from your own membership.</p>
+   </article>
+  </div>
+ </section>
+ <section class="panel">
+  <h2>How the programme is intended to work</h2>
+  <ol class="steps">
+   <li><strong>A learner registers interest.</strong><br>They privately request sponsored access.</li>
+   <li><strong>A supporter contributes.</strong><br>A sponsorship payment helps fund a learner's access.</li>
+   <li><strong>A sponsored place is allocated.</strong><br>The programme matches an available contribution with a learner waiting for support.</li>
+   <li><strong>The learner is notified privately.</strong><br>They receive an email with instructions once their sponsored access is confirmed.</li>
+   <li><strong>They learn alongside everyone else.</strong><br>The intention is to provide the same welcoming learning experience, without a public sponsored label.</li>
+  </ol>
+ </section>
+ <section class="panel">
+  <h2>What will sponsored access include?</h2>
+  <p>Our intention is to make the main learning experience on The Open Page available to sponsored learners, including news, short stories, poetry, video lessons, learning activities and Beyond the Page.</p>
+  <p>The final scope of access, including how specialist paid courses are treated, will be clearly explained before the programme opens.</p>
+ </section>
+ <section class="panel">
+  <h2>Fairness, privacy and sustainability</h2>
+  <ul>
+   <li>Applications and sponsorship status will be private.</li>
+   <li>Sponsors will not be given recipients' personal details.</li>
+   <li>Contributions will be matched to individual sponsored places and recorded so they cannot be allocated twice.</li>
+   <li>We will explain the duration and conditions of sponsored access clearly before anyone joins.</li>
+   <li>We will set the sponsorship price only after the full membership benefits and ongoing costs have been worked out.</li>
+  </ul>
+ </section>
+ <section class="notice">
+  <strong>Help us prepare the programme</strong>
+  <p>The Open Door Programme is not accepting applications or payments yet. We are building the system and will publish the prices, eligibility details, access arrangements and application process before it opens.</p>
+ </section>
+</main>
+<footer><strong>THE OPEN PAGE</strong><br>Read. Discover. Think. Express.</footer>
+</body>
+</html>
