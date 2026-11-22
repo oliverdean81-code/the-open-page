@@ -103,7 +103,7 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 <div id="saveMsg" class="status">Create a lesson first. You can then add its vocabulary and activities.</div>
 <div id="extras" class="hidden">
 <h3>Vocabulary</h3><div class="grid"><div><label for="word">Word or phrase</label><textarea id="word" class="vocab-field" rows="2"></textarea></div><div><label for="definition">Definition</label><textarea id="definition" class="vocab-field" rows="3"></textarea></div></div><label for="example">Example sentence (optional)</label><textarea id="example" class="vocab-field" rows="2"></textarea><div class="actions"><button id="addWordBtn" class="secondary">Add vocabulary</button><button id="cancelWordEditBtn" class="secondary hidden" type="button">Cancel editing</button></div><div id="vocabList" class="muted"></div>
-<h3>Activities and questions</h3><div class="grid"><div><label for="activityType">Activity type</label><select id="activityType"><option value="comprehension">Comprehension</option><option value="discussion">Discussion / critical thinking</option><option value="summary">Written summary</option><option value="essay">Suggested essay topic</option><option value="literary-analysis">Literary analysis</option></select></div><div><label for="answer">Suggested answer (optional)</label><input id="answer"></div></div><label for="prompt">Question or activity prompt</label><textarea id="prompt" style="min-height:85px"></textarea><div class="actions"><button id="addActivityBtn" class="secondary">Add activity</button></div><div id="activityList" class="muted"></div>
+<h3>Activities and questions</h3><div class="grid"><div><label for="activityType">Activity type</label><select id="activityType"><option value="comprehension">Comprehension</option><option value="discussion">Discussion / critical thinking</option><option value="summary">Written summary</option><option value="essay">Suggested essay topic</option><option value="literary-analysis">Literary analysis</option></select></div><div><label for="answer">Suggested answer (optional)</label><input id="answer"></div></div><label for="prompt">Question or activity prompt</label><textarea id="prompt" style="min-height:85px"></textarea><div class="actions"><button id="addActivityBtn" class="secondary">Add activity</button><button id="cancelActivityEditBtn" class="secondary hidden" type="button">Cancel editing</button></div><div id="activityList" class="muted"></div>
 </div>
 </div>
 </section>
@@ -148,7 +148,7 @@ function setupExtrasToggle(){
   button.querySelector('span:last-child').textContent=extras.hidden?'+':'−';
  });
 }
-let supabaseClient=null, currentUser=null, editingVocabularyId=null;
+let supabaseClient=null, currentUser=null, editingVocabularyId=null, editingActivityId=null;
 const $=id=>document.getElementById(id);
 function message(id,text){$(id).textContent=text}
 function show(id,on=true){$(id).classList.toggle('hidden',!on)}
@@ -196,7 +196,7 @@ async function enterDashboard(){
 $('signOutBtn').addEventListener('click',async()=>{await supabaseClient.auth.signOut();currentUser=null;show('dashboard',false);show('loginPanel')});
 $('newLessonBtn').addEventListener('click',()=>{resetEditor();$('editor').scrollIntoView({behavior:'smooth'})});
 $('cancelBtn').addEventListener('click',resetEditor);
-function resetEditor(){editingVocabularyId=null;$('addWordBtn').textContent='Add vocabulary';show('cancelWordEditBtn',false);['lessonId','title','slug','summary','content','video','word','definition','example','prompt','answer'].forEach(id=>$(id).value='');$('lessonStatus').value='draft';$('videoFile').value='';message('videoUploadMsg','Choose a video file, then click Upload video. The uploaded video link will be added to the lesson automatically.');$('area').value='news';$('level').value='B1';$('editorHeading').textContent='Create a lesson';show('extras',false);message('saveMsg','Create a lesson first. You can then add its vocabulary and activities.')}
+function resetEditor(){editingVocabularyId=null;editingActivityId=null;$('addWordBtn').textContent='Add vocabulary';$('addActivityBtn').textContent='Add activity';show('cancelWordEditBtn',false);show('cancelActivityEditBtn',false);['lessonId','title','slug','summary','content','video','word','definition','example','prompt','answer'].forEach(id=>$(id).value='');$('lessonStatus').value='draft';$('videoFile').value='';message('videoUploadMsg','Choose a video file, then click Upload video. The uploaded video link will be added to the lesson automatically.');$('area').value='news';$('level').value='B1';$('editorHeading').textContent='Create a lesson';show('extras',false);message('saveMsg','Create a lesson first. You can then add its vocabulary and activities.')}
 $('title').addEventListener('input',()=>{if(!$('lessonId').value)$('slug').value=safeSlug($('title').value)});
 async function loadLessons(){
  const {data,error}=await supabaseClient.from('lessons').select('id,title,status,area_id,level_id,created_at,learning_areas(name),levels(name,code)').order('created_at',{ascending:false});
@@ -400,9 +400,22 @@ async function loadExtras(){
   const remove=document.createElement('button');remove.type='button';remove.style.background='#a43d35';remove.textContent='Delete';remove.addEventListener('click',()=>deleteVocabulary(item));
   controls.append(edit,remove);row.append(details,controls);$('vocabList').append(row);
  });
- const {data:a,error:ae}=await supabaseClient.from('activities').select('*').eq('lesson_id',id).order('sort_order');
+ const {data:a,error:ae}=await supabaseClient.from('activities').select('id,activity_type,prompt,suggested_answer').eq('lesson_id',id).order('sort_order');
  if(ae){$('activityList').textContent='Could not load activities: '+ae.message;return}
- $('activityList').innerHTML=(a||[]).map(x=>'<div>• '+escapeText(formatActivityType(x.activity_type))+': '+escapeText(x.prompt)+'</div>').join('')||'No activities added yet.'
+ $('activityList').innerHTML='';
+ if(!a||!a.length){$('activityList').textContent='No activities added yet.'}
+ (a||[]).forEach(item=>{
+  const row=document.createElement('div');row.style.cssText='display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);flex-wrap:wrap';
+  const details=document.createElement('div');details.style.cssText='flex:1;min-width:220px';
+  const type=document.createElement('strong');type.textContent=formatActivityType(item.activity_type);
+  const prompt=document.createElement('div');prompt.textContent=item.prompt;
+  details.append(type,prompt);
+  if(item.suggested_answer){const answer=document.createElement('div');answer.className='muted';answer.textContent='Suggested answer: '+item.suggested_answer;details.append(answer)}
+  const controls=document.createElement('div');controls.style.cssText='display:flex;gap:6px;flex-wrap:wrap';
+  const edit=document.createElement('button');edit.type='button';edit.className='secondary';edit.textContent='Edit';edit.addEventListener('click',()=>editActivity(item));
+  const remove=document.createElement('button');remove.type='button';remove.style.background='#a43d35';remove.textContent='Delete';remove.addEventListener('click',()=>deleteActivity(item));
+  controls.append(edit,remove);row.append(details,controls);$('activityList').append(row);
+ });
 }
 function resetVocabularyEditor(){
  editingVocabularyId=null;
@@ -445,10 +458,45 @@ $('addWordBtn').addEventListener('click',async()=>{
   resetVocabularyEditor();await loadExtras();message('saveMsg','Vocabulary added.');
  }
 });
+function resetActivityEditor(){
+ editingActivityId=null;
+ $('activityType').value='comprehension';
+ ['prompt','answer'].forEach(id=>$(id).value='');
+ $('addActivityBtn').textContent='Add activity';
+ show('cancelActivityEditBtn',false);
+}
+function editActivity(item){
+ editingActivityId=item.id;
+ $('activityType').value=item.activity_type||'comprehension';
+ $('prompt').value=item.prompt||'';
+ $('answer').value=item.suggested_answer||'';
+ $('addActivityBtn').textContent='Save activity changes';
+ show('cancelActivityEditBtn',true);
+ $('prompt').scrollIntoView({behavior:'smooth',block:'center'});
+ $('prompt').focus();
+ message('saveMsg','Editing this activity. Make your changes, then click Save activity changes.');
+}
+async function deleteActivity(item){
+ if(!confirm('Delete this activity or question? This cannot be undone.'))return;
+ const {error}=await supabaseClient.from('activities').delete().eq('id',item.id).eq('lesson_id',$('lessonId').value);
+ if(error){message('saveMsg','Could not delete activity: '+error.message);return}
+ if(editingActivityId===item.id)resetActivityEditor();
+ await loadExtras();message('saveMsg','Activity deleted.');
+}
+$('cancelActivityEditBtn').addEventListener('click',()=>{resetActivityEditor();message('saveMsg','Activity editing cancelled.')});
 $('addActivityBtn').addEventListener('click',async()=>{
- const lesson_id=$('lessonId').value,prompt=$('prompt').value.trim();if(!lesson_id||!prompt){message('saveMsg','Enter an activity prompt and save the lesson first.');return}
- const {error}=await supabaseClient.from('activities').insert({lesson_id,activity_type:$('activityType').value,prompt,suggested_answer:$('answer').value.trim()||null});if(error){message('saveMsg','Could not add activity: '+error.message);return}
- ['prompt','answer'].forEach(id=>$(id).value='');await loadExtras();message('saveMsg','Activity added.')
+ const lesson_id=$('lessonId').value,prompt=$('prompt').value.trim();
+ if(!lesson_id||!prompt){message('saveMsg','Enter an activity prompt and save the lesson first.');return}
+ const record={activity_type:$('activityType').value,prompt,suggested_answer:$('answer').value.trim()||null};
+ if(editingActivityId){
+  const {error}=await supabaseClient.from('activities').update(record).eq('id',editingActivityId).eq('lesson_id',lesson_id);
+  if(error){message('saveMsg','Could not update activity: '+error.message);return}
+  resetActivityEditor();await loadExtras();message('saveMsg','Activity updated.');
+ }else{
+  const {error}=await supabaseClient.from('activities').insert({lesson_id,...record});
+  if(error){message('saveMsg','Could not add activity: '+error.message);return}
+  resetActivityEditor();await loadExtras();message('saveMsg','Activity added.');
+ }
 });
 </script>
 </body>
