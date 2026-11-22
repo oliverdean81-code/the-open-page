@@ -70,6 +70,24 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 <div id="studentWorkList"></div>
 </div>
 
+<div class="panel" id="specialistCourseBuilder">
+<h2>Specialist Course Builder</h2>
+<p class="muted">Start preparing your paid specialist courses here. Each course is created as a private draft section. You can then add its modules, readings, lecture videos and supporting materials using the section and topic tools below. Nothing is published to students from this setup step.</p>
+<div class="grid">
+ <div class="lesson">
+  <strong>Academic English</strong>
+  <p class="muted">B2–C1 · University study, critical reading, argument and academic writing.</p>
+  <button type="button" class="gold" id="setupAcademicCourseBtn">Set up Academic English</button>
+ </div>
+ <div class="lesson">
+  <strong>Scientific English</strong>
+  <p class="muted">Scientific reading, research abstracts, technical vocabulary and communicating findings.</p>
+  <button type="button" class="gold" id="setupScientificCourseBtn">Set up Scientific English</button>
+ </div>
+</div>
+<div id="specialistCourseMsg" class="status">Choose a course to create its private draft workspace. You can add the content gradually.</div>
+</div>
+
 <div class="panel" id="contentManager">
 <h2>Sections and video topics</h2>
 <p class="muted">Create your own learning sections, then add video topics and supporting materials inside them. Mark a section as free if everyone should be able to access it.</p>
@@ -330,6 +348,31 @@ async function deleteLesson(id,title){
  message('saveMsg','Lesson “'+title+'” and its associated learning materials have been deleted.');
  await loadLessons();
 }
+
+async function setupSpecialistCourse(course){
+ const status=$('specialistCourseMsg');
+ const definitions={
+  academic:{title:'Academic English',slug:'academic-english',description:'Specialist B2–C1 course in academic language, critical reading, argument construction, academic writing and research communication.'},
+  scientific:{title:'Scientific English',slug:'scientific-english',description:'Specialist course in scientific English, research articles, abstracts, scientific vocabulary, describing data and communicating findings.'}
+ };
+ const item=definitions[course];if(!item)return;
+ status.textContent='Checking your '+item.title+' workspace…';
+ const {data:existing,error:findError}=await supabaseClient.from('content_sections').select('id,title').eq('slug',item.slug).maybeSingle();
+ if(findError){status.textContent='Could not check for an existing course: '+findError.message;return}
+ let sectionId=existing?.id;
+ if(!sectionId){
+  const {data,error}=await supabaseClient.from('content_sections').insert({title:item.title,slug:item.slug,description:item.description,is_free:false,status:'draft'}).select('id').single();
+  if(error){status.textContent='Could not create the course workspace: '+error.message;return}
+  sectionId=data.id;
+ }
+ await loadSections();
+ $('topicSection').value=sectionId;
+ $('contentManager').scrollIntoView({behavior:'smooth',block:'start'});
+ $('topicTitle').focus();
+ status.textContent=existing?'Your '+item.title+' workspace already exists. It is selected below so you can add modules.':'Your '+item.title+' private draft workspace has been created and selected below. Now add each module as a topic.';
+}
+$('setupAcademicCourseBtn').addEventListener('click',()=>setupSpecialistCourse('academic'));
+$('setupScientificCourseBtn').addEventListener('click',()=>setupSpecialistCourse('scientific'));
 
 async function loadSections(){
  const {data,error}=await supabaseClient.from('content_sections').select('id,title,description,slug,is_free,status,sort_order').order('sort_order').order('created_at');
