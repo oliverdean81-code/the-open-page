@@ -108,8 +108,24 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
   <button type="button" class="workspace-tab gold" data-workspace="teaching" aria-selected="true">Teaching &amp; Content Creation</button>
   <button type="button" class="workspace-tab secondary" data-workspace="feedback" aria-selected="false">Student Feedback</button>
   <button type="button" class="workspace-tab secondary" data-workspace="tracker" aria-selected="false">Content Production Tracker</button>
+  <button type="button" class="workspace-tab secondary" data-workspace="planner" aria-selected="false">Weekly Work Planner</button>
+  <button type="button" class="workspace-tab secondary" data-workspace="library" aria-selected="false">Content Library</button>
  </div>
 </div>
+<div class="panel workspace-panel" id="weeklyWorkPlanner" data-workspace-panel="planner">
+<div class="actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 style="margin:0">Weekly Work Planner</h2><a href="index.html" style="display:inline-block;text-decoration:none;border-radius:7px;padding:12px 18px;background:var(--green);color:white;font:600 14px Arial,sans-serif">View website</a></div>
+<p class="muted">Plan a few realistic tasks for the week. Tick them off as you go. Saved in this browser on this computer.</p>
+<div class="grid"><div><label for="plannerTask">Task</label><input id="plannerTask" placeholder="e.g. Draft B2 news lesson"></div><div><label for="plannerDay">Day</label><select id="plannerDay"><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option><option>Any day</option></select></div></div>
+<div class="actions"><button type="button" class="gold" id="addPlannerTask">Add task</button></div><div id="plannerMessage" class="status">A short list is often more useful than a long one.</div><h3>This week's tasks</h3><div id="plannerList"><p class="muted">No tasks planned yet.</p></div></div>
+
+<div class="panel workspace-panel" id="contentLibrary" data-workspace-panel="library">
+<div class="actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 style="margin:0">Content Library</h2><a href="index.html" style="display:inline-block;text-decoration:none;border-radius:7px;padding:12px 18px;background:var(--green);color:white;font:600 14px Arial,sans-serif">View website</a></div>
+<p class="muted">Keep useful drafts, ideas, scripts and teaching notes together. This first version saves text in this browser, not in the website database.</p>
+<div class="grid"><div><label for="libraryTitle">Title</label><input id="libraryTitle" placeholder="e.g. Academic vocabulary – research"></div><div><label for="libraryProject">Project</label><select id="libraryProject"><option>Literature & News Courses</option><option>Beyond the Page</option><option>Academic English</option><option>Scientific English</option><option>Introduction to English Literature</option><option>Other</option></select></div><div><label for="libraryType">Material type</label><select id="libraryType"><option>Article</option><option>Short story</option><option>Poem</option><option>Vocabulary</option><option>Video script</option><option>Lecture notes</option><option>Questions and answers</option><option>Idea</option><option>Other</option></select></div><div><label for="libraryLevel">Level</label><select id="libraryLevel"><option value="">Not specified</option><option>B1</option><option>B2</option><option>C1</option><option>Multiple levels</option></select></div></div>
+<label for="libraryNotes">Draft, notes or useful details</label><textarea id="libraryNotes" placeholder="Paste your material or notes here…" style="min-height:140px"></textarea>
+<div class="actions"><button type="button" class="gold" id="saveLibraryItem">Save to library</button><button type="button" class="secondary" id="exportLibrary">Download library backup</button><label class="secondary" style="display:inline-flex;align-items:center;padding:10px 14px;border-radius:7px;cursor:pointer">Restore library backup<input id="importLibrary" type="file" accept="application/json" style="display:none"></label></div>
+<div id="libraryMessage" class="status">Your library is private to this browser. Download backups regularly.</div><h3>Saved materials</h3><div id="libraryList"><p class="muted">Your saved materials will appear here.</p></div></div>
+
 <div class="panel workspace-panel" id="lessonManagementPanel" data-workspace-panel="teaching"><div class="actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 style="margin:0">Your lessons</h2><div class="actions"><a href="index.html" style="display:inline-block;text-decoration:none;border-radius:7px;padding:12px 18px;background:var(--green);color:white;font:600 14px Arial,sans-serif">View website</a><button id="signOutBtn" class="secondary">Sign out</button></div></div><p class="muted">Only lessons you publish will be visible to students.</p><div id="lessonList"></div><button id="newLessonBtn" class="gold">Create a new lesson</button></div>
 
 <div class="panel workspace-panel hidden" id="studentWorkPanel" data-workspace-panel="feedback">
@@ -153,7 +169,7 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
  <div><label for="trackerPriority">Priority</label><select id="trackerPriority"><option value="Anytime">Anytime</option><option value="Soon">Soon</option><option value="Urgent">Urgent</option></select></div>
 </div>
 <label for="trackerNotes">Notes / next step</label><textarea id="trackerNotes" style="min-height:75px" placeholder="What needs to be done next?"></textarea>
-<div class="actions"><button type="button" class="gold" id="addTrackerItemBtn">Add to tracker</button></div>
+<div class="actions"><button type="button" class="gold" id="addTrackerItemBtn">Add to tracker</button></div><div class="actions"><button type="button" class="secondary" id="exportTrackerJson">Download tracker backup</button><button type="button" class="secondary" id="exportTrackerCsv">Export spreadsheet (CSV)</button><label class="secondary" style="display:inline-flex;align-items:center;padding:10px 14px;border-radius:7px;cursor:pointer">Restore tracker backup<input id="importTrackerJson" type="file" accept="application/json" style="display:none"></label></div>
 <div id="trackerMessage" class="status">Your content plan is saved in this browser on this computer.</div>
 <div class="grid" style="margin:18px 0">
  <div class="lesson"><strong id="trackerTotal">0</strong><small>Total items</small></div>
@@ -189,6 +205,15 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 <div class="actions"><button type="button" id="createTopicBtn">Add topic</button><button type="button" id="cancelTopicEditBtn" class="secondary" style="display:none">Cancel editing</button></div>
 <div id="topicMsg" class="status">Choose a section and enter a topic title.</div>
 </div>
+<div class="panel workspace-panel" id="lessonTemplateTools" data-workspace-panel="teaching">
+<h2>Reusable Lesson Templates &amp; Activity Assistant</h2><p class="muted">Choose a lesson structure to pre-fill the lesson editor, or prepare a detailed activity brief to use when developing questions and tasks.</p>
+<div class="grid"><div><label for="templateType">Lesson template</label><select id="templateType"><option value="news">News lesson</option><option value="story">Short story lesson</option><option value="poetry">Poetry lesson</option><option value="general">General reading lesson</option></select></div><div><label for="templateLevel">Learner level</label><select id="templateLevel"><option>B1</option><option>B2</option><option>C1</option></select></div></div>
+<div class="actions"><button type="button" class="gold" id="applyLessonTemplate">Use this lesson template</button></div><div id="templateMessage" class="status">The template fills a starting structure. Edit everything before saving or publishing.</div>
+<hr style="border:0;border-top:1px solid var(--line);margin:24px 0"><h3>Activity Preparation Assistant</h3>
+<label for="activitySourceText">Paste your article, story extract or lesson text</label><textarea id="activitySourceText" style="min-height:150px" placeholder="Paste the text you want to build activities around…"></textarea>
+<div class="grid"><div><label for="activityGenLevel">Learner level</label><select id="activityGenLevel"><option>B1</option><option>B2</option><option>C1</option></select></div><div><label for="activityGenType">Activities to prepare</label><select id="activityGenType"><option>Comprehension questions and suggested answers</option><option>Vocabulary and definitions</option><option>Discussion and critical-thinking questions</option><option>Writing task and assessment criteria</option><option>A complete lesson activity pack</option></select></div></div>
+<div class="actions"><button type="button" class="gold" id="createActivityBrief">Create activity brief</button><button type="button" class="secondary" id="copyActivityBrief">Copy brief</button></div><label for="activityBriefOutput">Your preparation brief</label><textarea id="activityBriefOutput" style="min-height:180px" placeholder="Your activity brief will appear here."></textarea>
+<p class="muted">This prepares a tailored prompt; it does not automatically generate or publish AI-written content. You remain in control of the final material.</p></div>
 <div class="panel workspace-panel" id="editor" data-workspace-panel="teaching">
 <h2 id="editorHeading">Create a lesson</h2>
 <input id="lessonId" type="hidden"><input id="lessonStatus" type="hidden" value="draft">
@@ -294,7 +319,7 @@ $('loginBtn').addEventListener('click',async()=>{
  if(error){message('loginMsg','Sign-in failed: '+error.message);return}currentUser=data.user;await enterDashboard()
 });
 function setTeacherWorkspace(name){
- const allowed=['teaching','feedback','tracker'];
+ const allowed=['teaching','feedback','tracker','planner','library'];
  if(!allowed.includes(name))name='teaching';
  document.querySelectorAll('[data-workspace-panel]').forEach(panel=>{
   const active=panel.dataset.workspacePanel===name;
