@@ -102,7 +102,7 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 <div class="actions"><button id="saveChangesBtn" class="secondary">Save changes</button><button id="saveDraftBtn" class="secondary">Save as draft</button><button id="publishBtn">Publish lesson</button><button id="cancelBtn" class="secondary">Clear form</button></div>
 <div id="saveMsg" class="status">Create a lesson first. You can then add its vocabulary and activities.</div>
 <div id="extras" class="hidden">
-<h3>Vocabulary</h3><div class="grid"><div><label for="word">Word or phrase</label><textarea id="word" class="vocab-field" rows="2"></textarea></div><div><label for="definition">Definition</label><textarea id="definition" class="vocab-field" rows="3"></textarea></div></div><label for="example">Example sentence (optional)</label><textarea id="example" class="vocab-field" rows="2"></textarea><div class="actions"><button id="addWordBtn" class="secondary">Add vocabulary</button></div><div id="vocabList" class="muted"></div>
+<h3>Vocabulary</h3><div class="grid"><div><label for="word">Word or phrase</label><textarea id="word" class="vocab-field" rows="2"></textarea></div><div><label for="definition">Definition</label><textarea id="definition" class="vocab-field" rows="3"></textarea></div></div><label for="example">Example sentence (optional)</label><textarea id="example" class="vocab-field" rows="2"></textarea><div class="actions"><button id="addWordBtn" class="secondary">Add vocabulary</button><button id="cancelWordEditBtn" class="secondary hidden" type="button">Cancel editing</button></div><div id="vocabList" class="muted"></div>
 <h3>Activities and questions</h3><div class="grid"><div><label for="activityType">Activity type</label><select id="activityType"><option value="comprehension">Comprehension</option><option value="discussion">Discussion / critical thinking</option><option value="summary">Written summary</option><option value="essay">Suggested essay topic</option><option value="literary-analysis">Literary analysis</option></select></div><div><label for="answer">Suggested answer (optional)</label><input id="answer"></div></div><label for="prompt">Question or activity prompt</label><textarea id="prompt" style="min-height:85px"></textarea><div class="actions"><button id="addActivityBtn" class="secondary">Add activity</button></div><div id="activityList" class="muted"></div>
 </div>
 </div>
@@ -383,15 +383,67 @@ async function editLesson(id){
 }
 async function loadExtras(){
  const id=$('lessonId').value;if(!id)return;
- const {data:v}=await supabaseClient.from('vocabulary').select('*').eq('lesson_id',id).order('sort_order');const sortedVocab=(v||[]).slice().sort((a,b)=>String(a.word||'').localeCompare(String(b.word||''),undefined,{sensitivity:'base'}));$('vocabList').innerHTML=sortedVocab.map(x=>'<div>• '+escapeText(x.word)+' — '+escapeText(x.definition)+'</div>').join('')||'No vocabulary added yet.';
- const {data:a}=await supabaseClient.from('activities').select('*').eq('lesson_id',id).order('sort_order');$('activityList').innerHTML=(a||[]).map(x=>'<div>• '+escapeText(formatActivityType(x.activity_type))+': '+escapeText(x.prompt)+'</div>').join('')||'No activities added yet.'
+ const {data:v,error:ve}=await supabaseClient.from('vocabulary').select('id,word,definition,example').eq('lesson_id',id);
+ if(ve){$('vocabList').textContent='Could not load vocabulary: '+ve.message;return}
+ const sortedVocab=(v||[]).slice().sort((a,b)=>String(a.word||'').localeCompare(String(b.word||''),undefined,{sensitivity:'base'}));
+ $('vocabList').innerHTML='';
+ if(!sortedVocab.length){$('vocabList').textContent='No vocabulary added yet.'}
+ sortedVocab.forEach(item=>{
+  const row=document.createElement('div');row.style.cssText='display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);flex-wrap:wrap';
+  const details=document.createElement('div');details.style.cssText='flex:1;min-width:220px';
+  const word=document.createElement('strong');word.textContent=item.word;
+  const definition=document.createElement('div');definition.textContent=item.definition;
+  details.append(word,definition);
+  if(item.example){const example=document.createElement('div');example.className='muted';example.textContent='Example: '+item.example;details.append(example)}
+  const controls=document.createElement('div');controls.style.cssText='display:flex;gap:6px;flex-wrap:wrap';
+  const edit=document.createElement('button');edit.type='button';edit.className='secondary';edit.textContent='Edit';edit.addEventListener('click',()=>editVocabulary(item));
+  const remove=document.createElement('button');remove.type='button';remove.style.background='#a43d35';remove.textContent='Delete';remove.addEventListener('click',()=>deleteVocabulary(item));
+  controls.append(edit,remove);row.append(details,controls);$('vocabList').append(row);
+ });
+ const {data:a,error:ae}=await supabaseClient.from('activities').select('*').eq('lesson_id',id).order('sort_order');
+ if(ae){$('activityList').textContent='Could not load activities: '+ae.message;return}
+ $('activityList').innerHTML=(a||[]).map(x=>'<div>• '+escapeText(formatActivityType(x.activity_type))+': '+escapeText(x.prompt)+'</div>').join('')||'No activities added yet.'
 }
+function resetVocabularyEditor(){
+ editingVocabularyId=null;
+ ['word','definition','example'].forEach(id=>$(id).value='');
+ $('addWordBtn').textContent='Add vocabulary';
+ show('cancelWordEditBtn',false);
+}
+function editVocabulary(item){
+ editingVocabularyId=item.id;
+ $('word').value=item.word||'';
+ $('definition').value=item.definition||'';
+ $('example').value=item.example||'';
+ $('addWordBtn').textContent='Save vocabulary changes';
+ show('cancelWordEditBtn',true);
+ $('word').scrollIntoView({behavior:'smooth',block:'center'});
+ $('word').focus();
+ message('saveMsg','Editing “'+item.word+'”. Make your changes, then click Save vocabulary changes.');
+}
+async function deleteVocabulary(item){
+ if(!confirm('Delete the vocabulary entry “'+item.word+'”? This cannot be undone.'))return;
+ const {error}=await supabaseClient.from('vocabulary').delete().eq('id',item.id).eq('lesson_id',$('lessonId').value);
+ if(error){message('saveMsg','Could not delete vocabulary: '+error.message);return}
+ if(editingVocabularyId===item.id)resetVocabularyEditor();
+ await loadExtras();message('saveMsg','Vocabulary entry deleted.');
+}
+$('cancelWordEditBtn').addEventListener('click',()=>{resetVocabularyEditor();message('saveMsg','Vocabulary editing cancelled.')});
 function escapeText(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function formatActivityType(s){return String(s||'').replace(/-/g,' ').replace(/\b\w/g,ch=>ch.toUpperCase())}
 $('addWordBtn').addEventListener('click',async()=>{
- const lesson_id=$('lessonId').value,word=$('word').value.trim(),definition=$('definition').value.trim();if(!lesson_id||!word||!definition){message('saveMsg','Add a word and definition, and save the lesson first.');return}
- const {error}=await supabaseClient.from('vocabulary').insert({lesson_id,word,definition,example:$('example').value.trim()||null});if(error){message('saveMsg','Could not add vocabulary: '+error.message);return}
- ['word','definition','example'].forEach(id=>$(id).value='');await loadExtras();message('saveMsg','Vocabulary added.')
+ const lesson_id=$('lessonId').value,word=$('word').value.trim(),definition=$('definition').value.trim();
+ if(!lesson_id||!word||!definition){message('saveMsg','Add a word and definition, and save the lesson first.');return}
+ const record={word,definition,example:$('example').value.trim()||null};
+ if(editingVocabularyId){
+  const {error}=await supabaseClient.from('vocabulary').update(record).eq('id',editingVocabularyId).eq('lesson_id',lesson_id);
+  if(error){message('saveMsg','Could not update vocabulary: '+error.message);return}
+  resetVocabularyEditor();await loadExtras();message('saveMsg','Vocabulary updated and put back into alphabetical order.');
+ }else{
+  const {error}=await supabaseClient.from('vocabulary').insert({lesson_id,...record});
+  if(error){message('saveMsg','Could not add vocabulary: '+error.message);return}
+  resetVocabularyEditor();await loadExtras();message('saveMsg','Vocabulary added.');
+ }
 });
 $('addActivityBtn').addEventListener('click',async()=>{
  const lesson_id=$('lessonId').value,prompt=$('prompt').value.trim();if(!lesson_id||!prompt){message('saveMsg','Enter an activity prompt and save the lesson first.');return}
