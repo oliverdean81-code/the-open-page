@@ -197,7 +197,24 @@ footer {
 
   nav a.specialist-nav-button, nav a.specialist-nav-button:link, nav a.specialist-nav-button:visited{display:inline-block;background:var(--gold);color:var(--green);padding:9px 14px;border-radius:4px;font-weight:bold;text-decoration:none}
   nav a.specialist-nav-button:hover{background:#ddc99d;color:var(--green)}
- </style>
+ 
+.beyond-page{background:#344b3d;color:#f7f4ec;padding:72px 7%}
+.beyond-inner{max-width:1100px;margin:auto}
+.beyond-kicker{color:#ddc99d;letter-spacing:3px;font-size:12px;text-align:center}
+.beyond-page h2{color:#fffdf8;text-align:center;font-size:clamp(34px,5vw,46px);margin:12px 0}
+.beyond-lead{max-width:760px;margin:0 auto 34px;text-align:center;font-size:18px;line-height:1.8;color:#eee9dc}
+.beyond-feature{display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:stretch}
+.beyond-feature>div{padding:28px;background:rgba(255,255,255,.07);border:1px solid rgba(221,201,157,.35);border-radius:6px}
+.beyond-label{color:#ddc99d;font-size:12px;letter-spacing:2px}
+.beyond-feature h3{color:#fffdf8;font-size:27px;font-weight:normal;margin:12px 0}
+.beyond-feature p{line-height:1.8;color:#eee9dc}
+.beyond-feature a{display:inline-block;margin-top:10px;color:#f0d9a6;font-weight:bold;text-decoration:none;border-bottom:1px solid #b39a68;padding-bottom:4px}
+.beyond-question{display:flex;flex-direction:column;justify-content:center;gap:14px;background:#f7f4ec!important;color:#344b3d}
+.beyond-question span{font-size:12px;letter-spacing:2px;color:#8a7045}
+.beyond-question strong{font:normal 25px/1.4 Georgia,serif;color:#344b3d}
+.beyond-question small{color:#62665f;font-size:14px}
+@media(max-width:750px){.beyond-feature{grid-template-columns:1fr}.beyond-page{padding:52px 6%}}
+</style>
 </head>
 <body>
 
@@ -423,6 +440,27 @@ footer {
       <a href="specialist-courses.html">Explore specialist courses →</a>
     </article>
 
+  </div>
+</section>
+
+<section class="beyond-page">
+  <div class="beyond-inner">
+    <div class="beyond-kicker">READ · THINK · QUESTION · DISCUSS</div>
+    <h2>Beyond the Page</h2>
+    <p class="beyond-lead">English is more than a language to learn. It is a way to explore ideas, question assumptions and understand the world from different perspectives.</p>
+    <div class="beyond-feature">
+      <div>
+        <span class="beyond-label">FEATURED IDEA</span>
+        <h3>Perspectives Around the World</h3>
+        <p>Explore how people in different places and circumstances might approach the same global question. Compare viewpoints, examine evidence and develop your own informed response.</p>
+        <a href="beyond-the-page.html">Explore Beyond the Page →</a>
+      </div>
+      <div class="beyond-question">
+        <span>START WITH A QUESTION</span>
+        <strong>Who should be responsible for protecting the environment?</strong>
+        <small>Individuals, businesses, governments — or all of us?</small>
+      </div>
+    </div>
   </div>
 </section>
 
