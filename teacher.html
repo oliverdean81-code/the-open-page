@@ -210,7 +210,7 @@ async function loadStudentResponses(){
  status.textContent='Loading student submissions…';list.innerHTML='';
  const {data:responses,error:responseError}=await supabaseClient
   .from('student_activity_responses')
-  .select('id,user_id,activity_id,answer_text,submitted_at')
+  .select('id,user_id,activity_id,answer,submitted_at')
   .order('submitted_at',{ascending:false});
  if(responseError){
   status.textContent='Student answers are not available yet. Check the student-answer viewing permission in Supabase: '+responseError.message;
@@ -238,7 +238,7 @@ async function loadStudentResponses(){
   const card=document.createElement('article');card.className='lesson';
   const heading=document.createElement('strong');heading.textContent=lesson?.title||'Lesson';
   const prompt=document.createElement('p');prompt.textContent=activity?.prompt||'Activity';
-  const answer=document.createElement('p');answer.style.cssText='white-space:pre-wrap;margin:12px 0';answer.textContent=response.answer_text||'No answer text';
+  const answer=document.createElement('p');answer.style.cssText='white-space:pre-wrap;margin:12px 0';answer.textContent=response.answer||'No answer text';
   const meta=document.createElement('small');meta.textContent='Student account: '+String(response.user_id).slice(0,8)+' · Submitted: '+(response.submitted_at?new Date(response.submitted_at).toLocaleString():'Date unavailable');
   card.append(heading,prompt,answer,meta);list.appendChild(card);
  });
