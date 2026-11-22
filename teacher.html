@@ -15,6 +15,20 @@ label{display:block;font:600 14px Arial,sans-serif;margin:14px 0 6px}input,selec
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
 button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);color:white;font:600 14px Arial,sans-serif;cursor:pointer}button.secondary{background:#e9e5db;color:var(--green)}button.gold{background:var(--gold);color:#fff}
 .status{padding:10px 12px;border-radius:7px;background:#f1eee6;margin:12px 0;font:14px Arial,sans-serif}.hidden{display:none!important}.muted{color:#6e746d;font:14px Arial,sans-serif}.lesson{padding:14px;border:1px solid var(--line);border-radius:8px;margin:10px 0}.lesson strong{color:var(--green)}.lesson small{display:block;color:#68736b;margin:4px 0 10px}.lesson-actions{display:flex;gap:8px;flex-wrap:wrap}.lesson button.danger{background:#a43d35;color:#fff}.teacher-lesson-title{display:inline-block;color:var(--green);font-weight:bold;text-decoration:none}.teacher-lesson-title:hover{text-decoration:underline;color:var(--gold)}
+#editor{padding:28px}
+#editor>h2{margin-bottom:22px}
+#editor label{margin-top:18px}
+#editor textarea{line-height:1.55}
+#editor .actions{align-items:center}
+#editor .editor-extra-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;margin-top:18px;padding:16px 18px;background:#f7f4ec;border:1px solid var(--line);color:var(--green);text-align:left;font:600 16px Arial,sans-serif}
+#editor .editor-extra-toggle:hover{background:#eee9dc}
+#editor .editor-extra-toggle span:last-child{color:var(--gold);font-size:20px}
+#editor #extras{padding:4px 18px 18px;border:1px solid var(--line);border-top:0;border-radius:0 0 9px 9px;background:#fbfaf7}
+#editor #extras h3{margin-top:24px}
+#editor #saveMsg{margin-top:14px}
+#editor .actions:has(#publishBtn){padding:16px;background:#f7f4ec;border-radius:9px}
+@media(max-width:650px){#editor{padding:18px}}
+
 @media(max-width:650px){.grid{grid-template-columns:1fr}.panel{padding:18px}header{padding:22px}}
 </style>
 </head>
@@ -88,6 +102,17 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 </section>
 </main>
 <script>
+function setupExtrasToggle(){
+ const extras=document.getElementById('extras');
+ if(!extras||document.getElementById('extrasToggle'))return;
+ const button=document.createElement('button');button.type='button';button.id='extrasToggle';button.className='editor-extra-toggle';button.innerHTML='<span>Vocabulary and activities</span><span aria-hidden="true">+</span>';
+ extras.parentNode.insertBefore(button,extras);
+ extras.hidden=true;
+ button.addEventListener('click',()=>{
+  extras.hidden=!extras.hidden;
+  button.querySelector('span:last-child').textContent=extras.hidden?'+':'−';
+ });
+}
 let supabaseClient=null, currentUser=null;
 const $=id=>document.getElementById(id);
 function message(id,text){$(id).textContent=text}
@@ -106,6 +131,7 @@ $('connectBtn').addEventListener('click',async()=>{
  try{localStorage.setItem('openPageSupabaseUrl',url);localStorage.setItem('openPageSupabaseKey',key);await connectWorkspace(url,key)}
  catch(e){message('setupMsg','Connection error: '+e.message)}
 });
+setupExtrasToggle();
 (async()=>{
  const url='https://cqdtodyknixyhbcmgrxh.supabase.co';
  const key='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxZHRvZHlrbml4eWhiY21ncnhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUxOTY2MTMsImV4cCI6MjExMDc3MjYxM30.4MMJAMELPrA5idvZ4bP4ssYklWlmhAN_EarRAleVDcU';
