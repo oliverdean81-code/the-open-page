@@ -10,7 +10,7 @@ function formatActivityType(s){return String(s||'').replace(/-/g,' ').replace(/\
 const client=window.supabase.createClient('https://cqdtodyknixyhbcmgrxh.supabase.co','sb_publishable_arlnZNY8-D3A-bVZ8Qx04w_3PtFlEX3'),root=document.getElementById('lesson');
 function el(tag,text,cls){const x=document.createElement(tag);x.textContent=text||'';if(cls)x.className=cls;return x}
 function panel(title){const p=document.createElement('section');p.className='panel';p.appendChild(el('h2',title));return p}
-async function load(){const slug=new URLSearchParams(location.search).get('slug');if(!slug){root.replaceChildren(el('p','No lesson was selected. Please return to the lessons page.'));return}
+async function load(){const params=new URLSearchParams(location.search);const lessonId=params.get('id');const slug=params.get('slug');if(!lessonId&&!slug){root.replaceChildren(el('p','No lesson was selected. Please return to the lessons page.'));return}
 try{
 const preview=new URLSearchParams(location.search).get('preview')==='1';
 if(preview){
@@ -19,7 +19,8 @@ if(preview){
  const {data:isTeacher,error:roleError}=await client.rpc('is_teacher');
  if(roleError||isTeacher!==true)throw new Error('Teacher access is required to preview unpublished lessons.');
 }
-let lessonQuery=client.from('lessons').select('id,title,slug,summary,area_id,level_id,status').eq('slug',slug);
+let lessonQuery=client.from('lessons').select('id,title,slug,summary,area_id,level_id,status');
+if(lessonId)lessonQuery=lessonQuery.eq('id',lessonId);else lessonQuery=lessonQuery.eq('slug',slug);
 if(!preview)lessonQuery=lessonQuery.eq('status','published');
 const {data:lesson,error}=await lessonQuery.single();if(error)throw error;
 const {data:privateRows,error:privateError}=await client.rpc('get_lesson_private_content',{p_lesson_id:lesson.id});
