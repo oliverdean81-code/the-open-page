@@ -148,7 +148,7 @@ function setupExtrasToggle(){
   button.querySelector('span:last-child').textContent=extras.hidden?'+':'−';
  });
 }
-let supabaseClient=null, currentUser=null;
+let supabaseClient=null, currentUser=null, editingVocabularyId=null;
 const $=id=>document.getElementById(id);
 function message(id,text){$(id).textContent=text}
 function show(id,on=true){$(id).classList.toggle('hidden',!on)}
@@ -196,7 +196,7 @@ async function enterDashboard(){
 $('signOutBtn').addEventListener('click',async()=>{await supabaseClient.auth.signOut();currentUser=null;show('dashboard',false);show('loginPanel')});
 $('newLessonBtn').addEventListener('click',()=>{resetEditor();$('editor').scrollIntoView({behavior:'smooth'})});
 $('cancelBtn').addEventListener('click',resetEditor);
-function resetEditor(){['lessonId','title','slug','summary','content','video','word','definition','example','prompt','answer'].forEach(id=>$(id).value='');$('lessonStatus').value='draft';$('videoFile').value='';message('videoUploadMsg','Choose a video file, then click Upload video. The uploaded video link will be added to the lesson automatically.');$('area').value='news';$('level').value='B1';$('editorHeading').textContent='Create a lesson';show('extras',false);message('saveMsg','Create a lesson first. You can then add its vocabulary and activities.')}
+function resetEditor(){editingVocabularyId=null;$('addWordBtn').textContent='Add vocabulary';show('cancelWordEditBtn',false);['lessonId','title','slug','summary','content','video','word','definition','example','prompt','answer'].forEach(id=>$(id).value='');$('lessonStatus').value='draft';$('videoFile').value='';message('videoUploadMsg','Choose a video file, then click Upload video. The uploaded video link will be added to the lesson automatically.');$('area').value='news';$('level').value='B1';$('editorHeading').textContent='Create a lesson';show('extras',false);message('saveMsg','Create a lesson first. You can then add its vocabulary and activities.')}
 $('title').addEventListener('input',()=>{if(!$('lessonId').value)$('slug').value=safeSlug($('title').value)});
 async function loadLessons(){
  const {data,error}=await supabaseClient.from('lessons').select('id,title,status,area_id,level_id,created_at,learning_areas(name),levels(name,code)').order('created_at',{ascending:false});
