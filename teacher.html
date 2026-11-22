@@ -58,6 +58,13 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 <section id="dashboard" class="hidden">
 <div class="panel"><div class="actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 style="margin:0">Your lessons</h2><div class="actions"><a href="index.html" style="display:inline-block;text-decoration:none;border-radius:7px;padding:12px 18px;background:var(--green);color:white;font:600 14px Arial,sans-serif">View website</a><button id="signOutBtn" class="secondary">Sign out</button></div></div><p class="muted">Only lessons you publish will be visible to students.</p><div id="lessonList"></div><button id="newLessonBtn" class="gold">Create a new lesson</button></div>
 
+<div class="panel" id="studentWorkPanel">
+<h2>Student work and progress</h2>
+<p class="muted">Review answers students have saved. A student is identified by a shortened account ID to protect their privacy.</p>
+<div id="studentWorkStatus" class="status">Loading student work…</div>
+<div id="studentWorkList"></div>
+</div>
+
 <div class="panel" id="contentManager">
 <h2>Sections and video topics</h2>
 <p class="muted">Create your own learning sections, then add video topics and supporting materials inside them. Mark a section as free if everyone should be able to access it.</p>
@@ -190,7 +197,7 @@ $('loginBtn').addEventListener('click',async()=>{
 async function enterDashboard(){
  const {data,error}=await supabaseClient.rpc('is_teacher');
  if(error||data!==true){await supabaseClient.auth.signOut();message('loginMsg','Teacher access check failed: '+(error?.message||'The database did not confirm teacher access.'));return}
- show('loginPanel',false);show('setup',false);show('dashboard');const params=new URLSearchParams(window.location.search);if(params.get('area')&&['news','short-stories','poetry'].includes(params.get('area'))) $('area').value=params.get('area');if(params.get('level')&&['B1','B2','C1'].includes(params.get('level'))) $('level').value=params.get('level');await loadLessons();await loadSections();if(params.has('level')) $('editor').scrollIntoView({behavior:'smooth'})
+ show('loginPanel',false);show('setup',false);show('dashboard');const params=new URLSearchParams(window.location.search);if(params.get('area')&&['news','short-stories','poetry'].includes(params.get('area'))) $('area').value=params.get('area');if(params.get('level')&&['B1','B2','C1'].includes(params.get('level'))) $('level').value=params.get('level');await loadLessons();await loadStudentResponses();await loadSections();if(params.has('level')) $('editor').scrollIntoView({behavior:'smooth'})
 }
 
 $('signOutBtn').addEventListener('click',async()=>{await supabaseClient.auth.signOut();currentUser=null;show('dashboard',false);show('loginPanel')});
@@ -198,6 +205,44 @@ $('newLessonBtn').addEventListener('click',()=>{resetEditor();$('editor').scroll
 $('cancelBtn').addEventListener('click',resetEditor);
 function resetEditor(){editingVocabularyId=null;editingActivityId=null;$('addWordBtn').textContent='Add vocabulary';$('addActivityBtn').textContent='Add activity';show('cancelWordEditBtn',false);show('cancelActivityEditBtn',false);['lessonId','title','slug','summary','content','video','word','definition','example','prompt','answer'].forEach(id=>$(id).value='');$('lessonStatus').value='draft';$('videoFile').value='';message('videoUploadMsg','Choose a video file, then click Upload video. The uploaded video link will be added to the lesson automatically.');$('area').value='news';$('level').value='B1';$('editorHeading').textContent='Create a lesson';show('extras',false);message('saveMsg','Create a lesson first. You can then add its vocabulary and activities.')}
 $('title').addEventListener('input',()=>{if(!$('lessonId').value)$('slug').value=safeSlug($('title').value)});
+async function loadStudentResponses(){
+ const status=$('studentWorkStatus'),list=$('studentWorkList');
+ status.textContent='Loading student submissions…';list.innerHTML='';
+ const {data:responses,error:responseError}=await supabaseClient
+  .from('student_activity_responses')
+  .select('id,user_id,activity_id,answer_text,submitted_at')
+  .order('submitted_at',{ascending:false});
+ if(responseError){
+  status.textContent='Student answers are not available yet. Check the student-answer viewing permission in Supabase: '+responseError.message;
+  return;
+ }
+ if(!responses||!responses.length){
+  status.textContent='No student answers have been submitted yet.';
+  return;
+ }
+ const activityIds=[...new Set(responses.map(x=>x.activity_id))];
+ const {data:activities,error:activityError}=await supabaseClient
+  .from('activities').select('id,lesson_id,activity_type,prompt').in('id',activityIds);
+ if(activityError){status.textContent='Could not load the related activities: '+activityError.message;return}
+ const lessonIds=[...new Set((activities||[]).map(x=>x.lesson_id))];
+ const {data:lessons,error:lessonError}=await supabaseClient
+  .from('lessons').select('id,title').in('id',lessonIds);
+ if(lessonError){status.textContent='Could not load lesson titles: '+lessonError.message;return}
+ const activityById=new Map((activities||[]).map(x=>[String(x.id),x]));
+ const lessonById=new Map((lessons||[]).map(x=>[String(x.id),x]));
+ const studentCount=new Set(responses.map(x=>x.user_id)).size;
+ status.textContent=responses.length+' saved answer'+(responses.length===1?'':'s')+' from '+studentCount+' student account'+(studentCount===1?'':'s')+'.';
+ responses.forEach(response=>{
+  const activity=activityById.get(String(response.activity_id));
+  const lesson=activity?lessonById.get(String(activity.lesson_id)):null;
+  const card=document.createElement('article');card.className='lesson';
+  const heading=document.createElement('strong');heading.textContent=lesson?.title||'Lesson';
+  const prompt=document.createElement('p');prompt.textContent=activity?.prompt||'Activity';
+  const answer=document.createElement('p');answer.style.cssText='white-space:pre-wrap;margin:12px 0';answer.textContent=response.answer_text||'No answer text';
+  const meta=document.createElement('small');meta.textContent='Student account: '+String(response.user_id).slice(0,8)+' · Submitted: '+(response.submitted_at?new Date(response.submitted_at).toLocaleString():'Date unavailable');
+  card.append(heading,prompt,answer,meta);list.appendChild(card);
+ });
+}
 async function loadLessons(){
  const {data,error}=await supabaseClient.from('lessons').select('id,title,status,area_id,level_id,created_at,learning_areas(name),levels(name,code)').order('created_at',{ascending:false});
  if(error){$('lessonList').textContent='Could not load lessons: '+error.message;return}
