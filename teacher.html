@@ -77,6 +77,10 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 @media(max-width:650px){#editor{padding:18px}}
 
 @media(max-width:650px){.grid{grid-template-columns:1fr}.panel{padding:18px}header{padding:22px}}
+.workspace-tabs{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.workspace-tab{flex:1 1 190px;min-height:48px;line-height:1.35}
+.workspace-panel[hidden]{display:none!important}
+
 </style>
 </head>
 <body>
@@ -96,9 +100,18 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 <div class="actions"><button id="loginBtn">Sign in</button></div><p class="muted"><a href="#" id="forgotPassword">Forgot your password?</a></p><div id="loginMsg" class="status"></div>
 </section>
 <section id="dashboard" class="hidden">
-<div class="panel"><div class="actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 style="margin:0">Your lessons</h2><div class="actions"><a href="index.html" style="display:inline-block;text-decoration:none;border-radius:7px;padding:12px 18px;background:var(--green);color:white;font:600 14px Arial,sans-serif">View website</a><button id="signOutBtn" class="secondary">Sign out</button></div></div><p class="muted">Only lessons you publish will be visible to students.</p><div id="lessonList"></div><button id="newLessonBtn" class="gold">Create a new lesson</button></div>
+<div class="panel" id="teacherWorkspaceNavigation">
+ <h2>Your workspace</h2>
+ <p class="muted">Choose an area to work in. Your teaching tools, student feedback and content planning are kept separate.</p>
+ <div class="workspace-tabs" role="tablist" aria-label="Teacher workspace">
+  <button type="button" class="workspace-tab gold" data-workspace="teaching" aria-selected="true">Teaching &amp; Content Creation</button>
+  <button type="button" class="workspace-tab secondary" data-workspace="feedback" aria-selected="false">Student Feedback</button>
+  <button type="button" class="workspace-tab secondary" data-workspace="tracker" aria-selected="false">Content Production Tracker</button>
+ </div>
+</div>
+<div class="panel workspace-panel" id="lessonManagementPanel" data-workspace-panel="teaching"><div class="actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 style="margin:0">Your lessons</h2><div class="actions"><a href="index.html" style="display:inline-block;text-decoration:none;border-radius:7px;padding:12px 18px;background:var(--green);color:white;font:600 14px Arial,sans-serif">View website</a><button id="signOutBtn" class="secondary">Sign out</button></div></div><p class="muted">Only lessons you publish will be visible to students.</p><div id="lessonList"></div><button id="newLessonBtn" class="gold">Create a new lesson</button></div>
 
-<div class="panel" id="studentWorkPanel">
+<div class="panel workspace-panel hidden" id="studentWorkPanel" data-workspace-panel="feedback">
 <h2>Student Feedback Inbox</h2>
 <p class="muted">Recent submissions stay here for seven days. Hide items whenever you like; archived answers and feedback remain safely stored.</p>
 <div class="actions" style="flex-wrap:wrap;margin:12px 0">
@@ -110,7 +123,7 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 <div id="studentWorkList"></div>
 </div>
 
-<div class="panel" id="specialistCourseBuilder">
+<div class="panel workspace-panel" id="specialistCourseBuilder" data-workspace-panel="teaching">
 <h2>Specialist Course Builder</h2>
 <p class="muted">Start preparing your paid specialist courses here. Each course is created as a private draft section. You can then add its modules, readings, lecture videos and supporting materials using the section and topic tools below. Nothing is published to students from this setup step.</p>
 <div class="grid">
@@ -128,7 +141,7 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 <div id="specialistCourseMsg" class="status">Choose a course to create its private draft workspace. You can add the content gradually.</div>
 </div>
 
-<div class="panel" id="contentProductionTracker">
+<div class="panel workspace-panel hidden" id="contentProductionTracker" data-workspace-panel="tracker">
 <h2>Content Production Tracker</h2>
 <p class="muted">A private planning board for your writing, recordings and uploads. Add each article, lesson or course module and move it through the stages as you work.</p>
 <div class="grid">
@@ -149,7 +162,7 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 <p class="muted">Privacy and saving: this tracker is only displayed inside the signed-in Teacher Dashboard. Its entries are stored locally in this browser, not in the student area or shared across devices. Keep a separate backup if you change computers or clear browser data.</p>
 </div>
 
-<div class="panel" id="contentManager">
+<div class="panel workspace-panel" id="contentManager" data-workspace-panel="teaching">
 <h2>Sections and video topics</h2>
 <p class="muted">Create your own learning sections, then add video topics and supporting materials inside them. Mark a section as free if everyone should be able to access it.</p>
 <h3>Create a new section</h3>
@@ -174,7 +187,7 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 <div class="actions"><button type="button" id="createTopicBtn">Add topic</button><button type="button" id="cancelTopicEditBtn" class="secondary" style="display:none">Cancel editing</button></div>
 <div id="topicMsg" class="status">Choose a section and enter a topic title.</div>
 </div>
-<div class="panel" id="editor">
+<div class="panel workspace-panel" id="editor" data-workspace-panel="teaching">
 <h2 id="editorHeading">Create a lesson</h2>
 <input id="lessonId" type="hidden"><input id="lessonStatus" type="hidden" value="draft">
 <div class="grid">
@@ -278,10 +291,27 @@ $('loginBtn').addEventListener('click',async()=>{
  message('loginMsg','Signing in…');const {data,error}=await supabaseClient.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
  if(error){message('loginMsg','Sign-in failed: '+error.message);return}currentUser=data.user;await enterDashboard()
 });
+function setTeacherWorkspace(name){
+ const allowed=['teaching','feedback','tracker'];
+ if(!allowed.includes(name))name='teaching';
+ document.querySelectorAll('[data-workspace-panel]').forEach(panel=>{
+  const active=panel.dataset.workspacePanel===name;
+  panel.classList.toggle('hidden',!active);
+ });
+ document.querySelectorAll('.workspace-tab').forEach(button=>{
+  const active=button.dataset.workspace===name;
+  button.classList.toggle('gold',active);
+  button.classList.toggle('secondary',!active);
+  button.setAttribute('aria-selected',active?'true':'false');
+ });
+}
+document.querySelectorAll('.workspace-tab').forEach(button=>{
+ button.addEventListener('click',()=>setTeacherWorkspace(button.dataset.workspace));
+});
 async function enterDashboard(){
  const {data,error}=await supabaseClient.rpc('is_teacher');
  if(error||data!==true){await supabaseClient.auth.signOut();message('loginMsg','Teacher access check failed: '+(error?.message||'The database did not confirm teacher access.'));return}
- show('loginPanel',false);show('setup',false);show('dashboard');const params=new URLSearchParams(window.location.search);if(params.get('area')&&['news','short-stories','poetry'].includes(params.get('area'))) $('area').value=params.get('area');if(params.get('level')&&['B1','B2','C1'].includes(params.get('level'))) $('level').value=params.get('level');await loadLessons();await loadStudentResponses();await loadSections();if(params.has('level')) $('editor').scrollIntoView({behavior:'smooth'})
+ show('loginPanel',false);show('setup',false);show('dashboard');setTeacherWorkspace('teaching');const params=new URLSearchParams(window.location.search);if(params.get('area')&&['news','short-stories','poetry'].includes(params.get('area'))) $('area').value=params.get('area');if(params.get('level')&&['B1','B2','C1'].includes(params.get('level'))) $('level').value=params.get('level');await loadLessons();await loadStudentResponses();await loadSections();if(params.has('level')) $('editor').scrollIntoView({behavior:'smooth'})
 }
 
 $('signOutBtn').addEventListener('click',async()=>{await supabaseClient.auth.signOut();currentUser=null;show('dashboard',false);show('loginPanel')});
