@@ -230,7 +230,7 @@ function addText(parent,tag,value,className){
 }
 function showNewsLesson(lesson,target){
  const card=document.createElement('article');card.className='published-lesson';
- const link=document.createElement('a');link.href='lesson.html?slug='+encodeURIComponent(lesson.slug);link.textContent=lesson.title;link.className='lesson-title-link';card.appendChild(link);
+ const link=document.createElement('a');link.href='lesson.html?id='+encodeURIComponent(lesson.id);link.textContent=lesson.title;link.className='lesson-title-link';card.appendChild(link);
  if(lesson.summary)addText(card,'p',lesson.summary);
  target.appendChild(card);
 }
