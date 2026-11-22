@@ -4,7 +4,47 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Teacher Dashboard | The Open Page</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+/* Content Production Tracker — stored locally in this browser */
+const trackerStorageKey='theOpenPageContentTrackerV1';
+function getTrackerItems(){
+ try{return JSON.parse(localStorage.getItem(trackerStorageKey)||'[]')}catch(e){return []}
+}
+function saveTrackerItems(items){localStorage.setItem(trackerStorageKey,JSON.stringify(items))}
+function renderTracker(){
+ const items=getTrackerItems();
+ $('trackerTotal').textContent=items.length;
+ $('trackerPublished').textContent=items.filter(item=>item.status==='Published').length;
+ const list=$('trackerList');list.innerHTML='';
+ if(!items.length){list.innerHTML='<p class="muted">No content tasks yet. Add your first item above.</p>';return}
+ const order=['Idea','Writing','Recording','Uploading','Published'];
+ items.forEach(item=>{
+  const card=document.createElement('div');card.className='lesson';
+  const top=document.createElement('div');top.style.cssText='display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start';
+  const details=document.createElement('div');details.style.cssText='flex:1;min-width:220px';
+  const title=document.createElement('strong');title.textContent=item.title;
+  const meta=document.createElement('small');meta.textContent=[item.project,item.level].filter(Boolean).join(' · ')+' · Updated '+new Date(item.updatedAt).toLocaleDateString();
+  details.append(title,meta);
+  if(item.notes){const notes=document.createElement('p');notes.className='muted';notes.style.margin='8px 0 0';notes.textContent='Next step: '+item.notes;details.append(notes)}
+  const controls=document.createElement('div');controls.style.cssText='display:flex;gap:8px;flex-wrap:wrap;align-items:center';
+  const status=document.createElement('select');status.style.width='auto';status.style.minWidth='130px';status.setAttribute('aria-label','Status for '+item.title);
+  order.forEach(stage=>{const option=document.createElement('option');option.value=stage;option.textContent=stage;if(item.status===stage)option.selected=true;status.append(option)});
+  status.addEventListener('change',()=>{const all=getTrackerItems();const target=all.find(x=>x.id===item.id);if(target){target.status=status.value;target.updatedAt=new Date().toISOString();saveTrackerItems(all);renderTracker()}});
+  const remove=document.createElement('button');remove.type='button';remove.className='secondary';remove.textContent='Delete';remove.addEventListener('click',()=>{if(!confirm('Delete “'+item.title+'” from your content tracker?'))return;saveTrackerItems(getTrackerItems().filter(x=>x.id!==item.id));renderTracker();$('trackerMessage').textContent='Content item deleted.'});
+  controls.append(status,remove);top.append(details,controls);card.append(top);list.append(card);
+ });
+}
+$('addTrackerItemBtn').addEventListener('click',()=>{
+ const title=$('trackerTitle').value.trim();
+ if(!title){$('trackerMessage').textContent='Please enter a title for this content item.';return}
+ const items=getTrackerItems();
+ items.unshift({id:Date.now().toString(36)+Math.random().toString(36).slice(2,8),title,project:$('trackerProject').value,level:$('trackerLevel').value,status:$('trackerStatus').value,notes:$('trackerNotes').value.trim(),updatedAt:new Date().toISOString()});
+ saveTrackerItems(items);
+ $('trackerTitle').value='';$('trackerNotes').value='';$('trackerStatus').value='Idea';$('trackerLevel').value='';
+ renderTracker();$('trackerMessage').textContent='Added to your content tracker.';
+});
+renderTracker();
+</script>
 <style>
 :root{--green:#344B3D;--cream:#F7F4EC;--gold:#B39A68;--ink:#26352d;--line:#ddd8cc}
 *{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font:16px/1.5 Georgia,serif}
@@ -86,6 +126,27 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
  </div>
 </div>
 <div id="specialistCourseMsg" class="status">Choose a course to create its private draft workspace. You can add the content gradually.</div>
+</div>
+
+<div class="panel" id="contentProductionTracker">
+<h2>Content Production Tracker</h2>
+<p class="muted">A private planning board for your writing, recordings and uploads. Add each article, lesson or course module and move it through the stages as you work.</p>
+<div class="grid">
+ <div><label for="trackerTitle">Content title</label><input id="trackerTitle" placeholder="e.g. Academic English – Module 1"></div>
+ <div><label for="trackerProject">Project</label><select id="trackerProject"><option>Literature & News Courses</option><option>Beyond the Page</option><option>Academic English</option><option>Scientific English</option><option>Introduction to English Literature</option><option>Other</option></select></div>
+ <div><label for="trackerLevel">Level (if relevant)</label><select id="trackerLevel"><option value="">Not specified</option><option>B1</option><option>B2</option><option>C1</option><option>Multiple levels</option></select></div>
+ <div><label for="trackerStatus">Current stage</label><select id="trackerStatus"><option>Idea</option><option>Writing</option><option>Recording</option><option>Uploading</option><option>Published</option></select></div>
+</div>
+<label for="trackerNotes">Notes / next step</label><textarea id="trackerNotes" style="min-height:75px" placeholder="What needs to be done next?"></textarea>
+<div class="actions"><button type="button" class="gold" id="addTrackerItemBtn">Add to tracker</button></div>
+<div id="trackerMessage" class="status">Your content plan is saved in this browser on this computer.</div>
+<div class="grid" style="margin:18px 0">
+ <div class="lesson"><strong id="trackerTotal">0</strong><small>Total items</small></div>
+ <div class="lesson"><strong id="trackerPublished">0</strong><small>Published</small></div>
+</div>
+<h3>Your content tasks</h3>
+<div id="trackerList"><p class="muted">No content tasks yet. Add your first item above.</p></div>
+<p class="muted">Privacy and saving: this tracker is only displayed inside the signed-in Teacher Dashboard. Its entries are stored locally in this browser, not in the student area or shared across devices. Keep a separate backup if you change computers or clear browser data.</p>
 </div>
 
 <div class="panel" id="contentManager">
