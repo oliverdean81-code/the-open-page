@@ -59,8 +59,13 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 <div class="panel"><div class="actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 style="margin:0">Your lessons</h2><div class="actions"><a href="index.html" style="display:inline-block;text-decoration:none;border-radius:7px;padding:12px 18px;background:var(--green);color:white;font:600 14px Arial,sans-serif">View website</a><button id="signOutBtn" class="secondary">Sign out</button></div></div><p class="muted">Only lessons you publish will be visible to students.</p><div id="lessonList"></div><button id="newLessonBtn" class="gold">Create a new lesson</button></div>
 
 <div class="panel" id="studentWorkPanel">
-<h2>Student submissions</h2>
-<p class="muted">Review answers students have saved. A student is identified by a shortened account ID to protect their privacy.</p>
+<h2>Student Feedback Inbox</h2>
+<p class="muted">Recent submissions stay here for seven days. Hide items whenever you like; archived answers and feedback remain safely stored.</p>
+<div class="actions" style="flex-wrap:wrap;margin:12px 0">
+<button type="button" class="secondary inbox-tab" data-tab="new">New submissions</button>
+<button type="button" class="secondary inbox-tab" data-tab="reviewed">Feedback given</button>
+<button type="button" class="secondary inbox-tab" data-tab="archived">Archived</button>
+</div>
 <div id="studentWorkStatus" class="status">Loading student work…</div>
 <div id="studentWorkList"></div>
 </div>
@@ -205,34 +210,55 @@ $('newLessonBtn').addEventListener('click',()=>{resetEditor();$('editor').scroll
 $('cancelBtn').addEventListener('click',resetEditor);
 function resetEditor(){editingVocabularyId=null;editingActivityId=null;$('addWordBtn').textContent='Add vocabulary';$('addActivityBtn').textContent='Add activity';show('cancelWordEditBtn',false);show('cancelActivityEditBtn',false);['lessonId','title','slug','summary','content','video','word','definition','example','prompt','answer'].forEach(id=>$(id).value='');$('lessonStatus').value='draft';$('videoFile').value='';message('videoUploadMsg','Choose a video file, then click Upload video. The uploaded video link will be added to the lesson automatically.');$('area').value='news';$('level').value='B1';$('editorHeading').textContent='Create a lesson';show('extras',false);message('saveMsg','Create a lesson first. You can then add its vocabulary and activities.')}
 $('title').addEventListener('input',()=>{if(!$('lessonId').value)$('slug').value=safeSlug($('title').value)});
+let studentInboxTab='new';
+document.querySelectorAll('.inbox-tab').forEach(button=>{
+ button.addEventListener('click',()=>{
+  studentInboxTab=button.dataset.tab;
+  document.querySelectorAll('.inbox-tab').forEach(b=>{b.classList.toggle('gold',b.dataset.tab===studentInboxTab);b.classList.toggle('secondary',b.dataset.tab!==studentInboxTab)});
+  loadStudentResponses();
+ });
+});
 async function loadStudentResponses(){
  const status=$('studentWorkStatus'),list=$('studentWorkList');
  status.textContent='Loading student submissions…';list.innerHTML='';
  const {data:responses,error:responseError}=await supabaseClient
   .from('student_activity_responses')
-  .select('id,user_id,activity_id,answer,submitted_at,feedback,feedback_at')
+  .select('id,user_id,activity_id,answer,submitted_at,feedback,feedback_at,archived_at')
   .order('submitted_at',{ascending:false});
- if(responseError){
-  status.textContent='Student answers are not available yet. Check the student-answer viewing permission in Supabase: '+responseError.message;
+ if(responseError){status.textContent='Could not load student submissions: '+responseError.message;return}
+ const now=Date.now(),sevenDays=7*24*60*60*1000;
+ const isOld=r=>!r.submitted_at||now-new Date(r.submitted_at).getTime()>=sevenDays;
+ const isArchived=r=>!!r.archived_at||isOld(r);
+ const filtered=(responses||[]).filter(r=>{
+  if(studentInboxTab==='archived')return isArchived(r);
+  if(isArchived(r))return false;
+  if(studentInboxTab==='reviewed')return !!(r.feedback&&r.feedback.trim());
+  return !(r.feedback&&r.feedback.trim());
+ });
+ const counts={
+  new:(responses||[]).filter(r=>!isArchived(r)&&!(r.feedback&&r.feedback.trim())).length,
+  reviewed:(responses||[]).filter(r=>!isArchived(r)&&!!(r.feedback&&r.feedback.trim())).length,
+  archived:(responses||[]).filter(isArchived).length
+ };
+ document.querySelectorAll('.inbox-tab').forEach(b=>{
+  const n=counts[b.dataset.tab]??0;
+  const labels={new:'New submissions',reviewed:'Feedback given',archived:'Archived'};
+  b.textContent=labels[b.dataset.tab]+' ('+n+')';
+ });
+ if(!filtered.length){
+  status.textContent=studentInboxTab==='new'?'No new submissions need feedback.':studentInboxTab==='reviewed'?'No recently reviewed submissions.':'No archived submissions.';
   return;
  }
- if(!responses||!responses.length){
-  status.textContent='No student answers have been submitted yet.';
-  return;
- }
- const activityIds=[...new Set(responses.map(x=>x.activity_id))];
- const {data:activities,error:activityError}=await supabaseClient
-  .from('activities').select('id,lesson_id,activity_type,prompt').in('id',activityIds);
- if(activityError){status.textContent='Could not load the related activities: '+activityError.message;return}
+ const activityIds=[...new Set(filtered.map(x=>x.activity_id))];
+ const {data:activities,error:activityError}=await supabaseClient.from('activities').select('id,lesson_id,activity_type,prompt').in('id',activityIds);
+ if(activityError){status.textContent='Could not load related activities: '+activityError.message;return}
  const lessonIds=[...new Set((activities||[]).map(x=>x.lesson_id))];
- const {data:lessons,error:lessonError}=await supabaseClient
-  .from('lessons').select('id,title').in('id',lessonIds);
+ const {data:lessons,error:lessonError}=await supabaseClient.from('lessons').select('id,title').in('id',lessonIds);
  if(lessonError){status.textContent='Could not load lesson titles: '+lessonError.message;return}
  const activityById=new Map((activities||[]).map(x=>[String(x.id),x]));
  const lessonById=new Map((lessons||[]).map(x=>[String(x.id),x]));
- const studentCount=new Set(responses.map(x=>x.user_id)).size;
- status.textContent=responses.length+' saved answer'+(responses.length===1?'':'s')+' from '+studentCount+' student account'+(studentCount===1?'':'s')+'.';
- responses.forEach(response=>{
+ status.textContent=filtered.length+' item'+(filtered.length===1?'':'s')+' in '+(studentInboxTab==='new'?'New submissions':studentInboxTab==='reviewed'?'Feedback given':'Archived')+'.';
+ filtered.forEach(response=>{
   const activity=activityById.get(String(response.activity_id));
   const lesson=activity?lessonById.get(String(activity.lesson_id)):null;
   const card=document.createElement('article');card.className='lesson';
@@ -240,22 +266,47 @@ async function loadStudentResponses(){
   const prompt=document.createElement('p');prompt.textContent=activity?.prompt||'Activity';
   const answer=document.createElement('p');answer.style.cssText='white-space:pre-wrap;margin:12px 0';answer.textContent=response.answer||'No answer text';
   const meta=document.createElement('small');meta.textContent='Student account: '+String(response.user_id).slice(0,8)+' · Submitted: '+(response.submitted_at?new Date(response.submitted_at).toLocaleString():'Date unavailable');
-  const feedbackLabel=document.createElement('label');feedbackLabel.textContent='Feedback for this student';
-  const feedbackInput=document.createElement('textarea');feedbackInput.rows=3;feedbackInput.style.cssText='width:100%;margin:8px 0;padding:10px;border:1px solid var(--line);border-radius:7px;font:14px Arial,sans-serif';feedbackInput.placeholder='Write encouraging, helpful feedback…';feedbackInput.value=response.feedback||'';
-  const saveFeedback=document.createElement('button');saveFeedback.type='button';saveFeedback.textContent='Save feedback';
-  const feedbackStatus=document.createElement('small');feedbackStatus.style.display='block';feedbackStatus.style.marginTop='8px';
-  saveFeedback.addEventListener('click',async()=>{
-   const feedback=feedbackInput.value.trim();
-   saveFeedback.disabled=true;saveFeedback.textContent='Saving…';feedbackStatus.textContent='';
-   const {error:feedbackError}=await supabaseClient.from('student_activity_responses').update({feedback,feedback_at:feedback?new Date().toISOString():null}).eq('id',response.id);
-   saveFeedback.disabled=false;saveFeedback.textContent='Save feedback';
-   if(feedbackError){feedbackStatus.textContent='Could not save feedback: '+feedbackError.message;return}
-   response.feedback=feedback;response.feedback_at=feedback?new Date().toISOString():null;
-   feedbackStatus.textContent=feedback?'Feedback saved. The student will see it when they next open the lesson.':'Feedback cleared.';
-  });
-  card.append(heading,prompt,answer,meta,feedbackLabel,feedbackInput,saveFeedback,feedbackStatus);list.appendChild(card);
+  card.append(heading,prompt,answer,meta);
+  if(studentInboxTab!=='archived'){
+   const feedbackLabel=document.createElement('label');feedbackLabel.textContent='Feedback for this student';
+   const feedbackInput=document.createElement('textarea');feedbackInput.rows=3;feedbackInput.style.cssText='width:100%;margin:8px 0;padding:10px;border:1px solid var(--line);border-radius:7px;font:14px Arial,sans-serif';feedbackInput.placeholder='Write encouraging, helpful feedback…';feedbackInput.value=response.feedback||'';
+   const saveFeedback=document.createElement('button');saveFeedback.type='button';saveFeedback.textContent='Save feedback';
+   const feedbackStatus=document.createElement('small');feedbackStatus.style.display='block';feedbackStatus.style.marginTop='8px';
+   saveFeedback.addEventListener('click',async()=>{
+    const feedback=feedbackInput.value.trim();saveFeedback.disabled=true;saveFeedback.textContent='Saving…';feedbackStatus.textContent='';
+    const {error}=await supabaseClient.from('student_activity_responses').update({feedback,feedback_at:feedback?new Date().toISOString():null}).eq('id',response.id);
+    saveFeedback.disabled=false;saveFeedback.textContent='Save feedback';
+    if(error){feedbackStatus.textContent='Could not save feedback: '+error.message;return}
+    feedbackStatus.textContent=feedback?'Feedback saved. The student will see it when they next open the lesson.':'Feedback cleared.';
+    response.feedback=feedback;response.feedback_at=feedback?new Date().toISOString():null;
+   });
+   card.append(feedbackLabel,feedbackInput,saveFeedback,feedbackStatus);
+  }else if(response.feedback){
+   const fb=document.createElement('p');fb.textContent='Teacher feedback: '+response.feedback;card.append(fb);
+  }
+  if(studentInboxTab!=='archived'){
+   const hide=document.createElement('button');hide.type='button';hide.className='secondary';hide.textContent='Hide / archive';
+   hide.addEventListener('click',async()=>{
+    hide.disabled=true;hide.textContent='Archiving…';
+    const {error}=await supabaseClient.from('student_activity_responses').update({archived_at:new Date().toISOString()}).eq('id',response.id);
+    if(error){hide.disabled=false;hide.textContent='Hide / archive';status.textContent='Could not archive this item: '+error.message;return}
+    loadStudentResponses();
+   });
+   card.append(hide);
+  }else if(response.archived_at&&!isOld(response)){
+   const restore=document.createElement('button');restore.type='button';restore.className='secondary';restore.textContent='Restore to inbox';
+   restore.addEventListener('click',async()=>{
+    restore.disabled=true;
+    const {error}=await supabaseClient.from('student_activity_responses').update({archived_at:null}).eq('id',response.id);
+    if(error){restore.disabled=false;status.textContent='Could not restore this item: '+error.message;return}
+    loadStudentResponses();
+   });
+   card.append(restore);
+  }
+  list.appendChild(card);
  });
 }
+
 async function loadLessons(){
  const {data,error}=await supabaseClient.from('lessons').select('id,title,status,area_id,level_id,created_at,learning_areas(name),levels(name,code)').order('created_at',{ascending:false});
  if(error){$('lessonList').textContent='Could not load lessons: '+error.message;return}
