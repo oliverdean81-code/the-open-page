@@ -27,6 +27,11 @@ h2{font-size:30px}
 .lens h3{margin:0 0 7px;font-size:21px}
 .note{font-size:14px;color:#62665f}
 footer{background:var(--green);color:white;text-align:center;padding:30px}
+.feature-nav{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:0 auto 28px;padding:16px;background:#fffdf8;border:1px solid #e4dfd3;border-radius:5px}
+.feature-nav a{color:var(--green);text-decoration:none;border:1px solid #d8c9a8;padding:8px 13px;border-radius:3px;font-size:14px}
+.feature-nav a:hover{background:var(--green);color:white}
+.panel{scroll-margin-top:20px;box-shadow:0 4px 14px rgba(38,53,45,.04)}
+
 @media(max-width:650px){.grid{grid-template-columns:1fr}header{justify-content:center}nav a{margin:0 7px}}
 </style>
 </head>
@@ -43,64 +48,70 @@ footer{background:var(--green);color:white;text-align:center;padding:30px}
 <main>
  <section class="intro">
   <h2>Learning to see more than one side</h2>
-  <p>Beyond the Page goes beyond vocabulary and comprehension. It invites learners to connect language with the world around them: to consider evidence, listen to different experiences, ask thoughtful questions and form their own reasoned views.</p>
+  <p>Beyond the Page connects English learning with the world around us. Explore important questions, compare international experiences, examine arguments and develop your own informed response.</p>
  </section>
- <section class="panel">
-  <div class="kicker" style="color:#8a7045">FEATURED SERIES</div>
-  <h2>Perspectives Around the World</h2>
-  <p>People's views are shaped by many things: where they live, their work and family experiences, their history, their access to resources and the choices available to them. Two people in the same country may disagree, while people in very different places may share similar concerns.</p>
-  <p>This series starts with one shared question and explores how it might look from different contexts. Learners compare experiences and evidence rather than assuming that everyone in a country thinks alike.</p>
+ <nav class="feature-nav" aria-label="Beyond the Page sections">
+  <a href="#big-question">The Big Question</a>
+  <a href="#world-perspectives">Perspectives Around the World</a>
+  <a href="#the-argument">The Argument</a>
+  <a href="#your-voice">Your Voice</a>
+ </nav>
+ <section class="panel" id="big-question">
+  <div class="kicker" style="color:#8a7045">01 · THE BIG QUESTION</div>
+  <h2>Start with a question worth thinking about</h2>
+  <p>Each feature begins with an open question connected to literature, news, science, history, society or everyday life. There may be several reasonable answers, and learners are encouraged to explain their thinking.</p>
   <div class="question">
-   <div class="kicker" style="color:#8a7045">OUR STARTING QUESTION</div>
+   <div class="kicker" style="color:#8a7045">FEATURED QUESTION</div>
    <strong>Who should be responsible for protecting the environment?</strong>
    <p>Individuals, businesses, governments — or all of us?</p>
   </div>
+  <p class="note">A question is a starting point, not a test with one predetermined answer.</p>
  </section>
- <section class="panel">
-  <h2>Look at the question through different lenses</h2>
-  <p>For example, an environmental issue may raise different practical questions for people in different circumstances. These are starting points for investigation, not claims that everyone in a particular place holds the same opinion.</p>
+ <section class="panel" id="world-perspectives">
+  <div class="kicker" style="color:#8a7045">02 · PERSPECTIVES AROUND THE WORLD</div>
+  <h2>Explore the issue through different experiences</h2>
+  <p>People's views can be shaped by where they live, their work and family experiences, their history, their access to resources and the choices available to them. People in the same country may disagree, while people in very different places may share similar concerns.</p>
+  <p>We explore contexts and lived experiences without suggesting that everyone in a place or group thinks alike. Each perspective should be supported by reliable sources, examples or first-hand contributions.</p>
   <div class="grid">
-   <article class="lens">
-    <h3>Island and coastal communities</h3>
-    <p>How do sea-level rise, storms, coastal livelihoods and the cost of adaptation affect local priorities?</p>
-   </article>
-   <article class="lens">
-    <h3>People in large cities</h3>
-    <p>How do public transport, housing, air quality and access to green spaces shape environmental choices?</p>
-   </article>
-   <article class="lens">
-    <h3>Rural and farming communities</h3>
-    <p>How can communities balance food production, employment, water quality and protection of ecosystems?</p>
-   </article>
-   <article class="lens">
-    <h3>Businesses and workers</h3>
-    <p>Who pays for cleaner technology and changes to production, and how might those changes affect jobs and prices?</p>
-   </article>
-   <article class="lens">
-    <h3>Governments and public services</h3>
-    <p>How should public policy balance long-term environmental goals with immediate social and economic needs?</p>
-   </article>
-   <article class="lens">
-    <h3>Young people and future generations</h3>
-    <p>How should decisions made today take account of people who will live with their consequences tomorrow?</p>
-   </article>
+   <article class="lens"><h3>Island and coastal communities</h3><p>How do sea-level rise, storms, coastal livelihoods and the cost of adaptation affect local priorities?</p></article>
+   <article class="lens"><h3>People in large cities</h3><p>How do public transport, housing, air quality and access to green spaces shape environmental choices?</p></article>
+   <article class="lens"><h3>Rural and farming communities</h3><p>How can communities balance food production, employment, water quality and protection of ecosystems?</p></article>
+   <article class="lens"><h3>Businesses and workers</h3><p>Who pays for cleaner technology and changes to production, and how might those changes affect jobs and prices?</p></article>
+   <article class="lens"><h3>Governments and public services</h3><p>How should public policy balance long-term environmental goals with immediate social and economic needs?</p></article>
+   <article class="lens"><h3>Young people and future generations</h3><p>How should decisions made today take account of people who will live with their consequences tomorrow?</p></article>
   </div>
+  <p class="note">These are lenses for investigation, not generalisations about entire countries or populations.</p>
+ </section>
+ <section class="panel" id="the-argument">
+  <div class="kicker" style="color:#8a7045">03 · THE ARGUMENT</div>
+  <h2>Examine claims, evidence and alternatives</h2>
+  <p>Good discussion involves more than stating an opinion. Learners practise identifying claims, asking what evidence supports them, recognising assumptions and considering counterarguments.</p>
+  <div class="grid">
+   <article class="lens"><h3>Make a claim</h3><p>What exactly is being argued? Is the statement specific enough to examine?</p></article>
+   <article class="lens"><h3>Look for evidence</h3><p>What reliable information supports the claim? Who produced it, and what might be missing?</p></article>
+   <article class="lens"><h3>Identify assumptions</h3><p>What is the argument taking for granted? Would those assumptions apply in every context?</p></article>
+   <article class="lens"><h3>Consider a counterargument</h3><p>What might a thoughtful person with a different view say? How could you respond fairly?</p></article>
+  </div>
+  <h3>Useful academic expressions</h3>
+  <ul><li>From this perspective…</li><li>By contrast…</li><li>This argument appears to overlook…</li><li>The available evidence suggests…</li><li>Nevertheless, an alternative interpretation is…</li></ul>
+ </section>
+ <section class="panel" id="your-voice">
+  <div class="kicker" style="color:#8a7045">04 · YOUR VOICE</div>
+  <h2>Develop and share your own response</h2>
+  <p>After exploring the issue, learners form their own view. The aim is not to agree with a particular position, but to express an idea clearly, support it with reasons and engage respectfully with other perspectives.</p>
+  <div class="question">
+   <strong>Your first challenge</strong>
+   <p>Should responsibility for protecting the environment fall mainly on individuals, businesses or governments? Explain your view and include one reason someone might disagree with you.</p>
+   <p class="note">Suggested activity: B2–C1 · Write 120–180 words.</p>
+  </div>
+  <h3>How to prepare a strong response</h3>
+  <ol><li>State your position clearly.</li><li>Give reasons and relevant evidence or examples.</li><li>Acknowledge another perspective.</li><li>Explain why you reach your conclusion.</li></ol>
+  <p class="note">Student contributions may be invited for future features and reviewed by an editor before publication. A public submission form and moderation process can be added when we are ready to receive contributions.</p>
  </section>
  <section class="panel">
-  <h2>How learners take part</h2>
-  <ol>
-   <li>Read a short, accessible introduction to the issue.</li>
-   <li>Explore several perspectives, supported by reliable sources and real examples.</li>
-   <li>Learn useful language for comparing, agreeing, disagreeing and qualifying an argument.</li>
-   <li>Answer comprehension and critical-thinking questions.</li>
-   <li>Write a short response explaining their own view and acknowledging another perspective.</li>
-  </ol>
-  <p class="note">Future editions can include articles, interviews, maps, short videos and contributions from people with direct experience. Student contributions can be moderated before publication.</p>
- </section>
- <section class="panel">
-  <h2>Try the first discussion</h2>
-  <p>Should responsibility for protecting the environment fall mainly on individuals, businesses or governments? Explain your view. Include one reason someone might disagree with you.</p>
-  <p class="note">Suggested activity: B2–C1 · Write 120–180 words.</p>
+  <h2>How a Beyond the Page feature works</h2>
+  <ol><li>Read or watch a short introduction to the topic.</li><li>Explore different experiences and viewpoints around the world.</li><li>Study language for comparing, evaluating and disagreeing respectfully.</li><li>Examine arguments and evidence.</li><li>Write or record your own response.</li></ol>
+  <p class="note">Features can be adapted for B1, B2 and C1 learners, with more demanding texts and analysis at higher levels.</p>
  </section>
 </main>
 <footer><strong>THE OPEN PAGE</strong><br>Read. Discover. Think. Express.</footer>
