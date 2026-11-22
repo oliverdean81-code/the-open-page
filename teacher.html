@@ -26,6 +26,13 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 #editor #extras{padding:4px 18px 18px;border:1px solid var(--line);border-top:0;border-radius:0 0 9px 9px;background:#fbfaf7}
 #editor #extras h3{margin-top:24px}
 #editor #saveMsg{margin-top:14px}
+#editor details.editor-extra-toggle-wrap{margin:18px 0;border:1px solid var(--line);border-radius:9px;background:#fbfaf7;padding:0 18px}
+#editor details.editor-extra-toggle-wrap>summary{cursor:pointer;list-style:none;padding:16px 2px;color:var(--green);font:600 15px Arial,sans-serif}
+#editor details.editor-extra-toggle-wrap>summary::-webkit-details-marker{display:none}
+#editor details.editor-extra-toggle-wrap>summary:after{content:'+';float:right;color:var(--gold);font-size:20px}
+#editor details.editor-extra-toggle-wrap[open]>summary:after{content:'−'}
+#editor .optional-settings-body{padding:0 0 18px}
+
 #editor .actions:has(#publishBtn){padding:16px;background:#f7f4ec;border-radius:9px}
 @media(max-width:650px){#editor{padding:18px}}
 
@@ -102,6 +109,34 @@ button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);colo
 </section>
 </main>
 <script>
+function organiseOptionalLessonFields(){
+ const editor=document.getElementById('editor');
+ if(!editor||document.getElementById('optionalLessonSettings'))return;
+ const details=document.createElement('details');
+ details.id='optionalLessonSettings';
+ details.className='editor-extra-toggle-wrap';
+ const summary=document.createElement('summary');
+ summary.textContent='Optional settings: web address and video';
+ details.appendChild(summary);
+ const body=document.createElement('div');
+ body.className='optional-settings-body';
+ details.appendChild(body);
+ const moveWithLabel=id=>{
+  const label=editor.querySelector('label[for="'+id+'"]');
+  const field=document.getElementById(id);
+  if(label)body.appendChild(label);
+  if(field)body.appendChild(field);
+ };
+ moveWithLabel('slug');
+ moveWithLabel('video');
+ moveWithLabel('videoFile');
+ const upload=document.getElementById('uploadVideoBtn');
+ if(upload&&upload.parentElement)body.appendChild(upload.parentElement);
+ const message=document.getElementById('videoUploadMsg');
+ if(message)body.appendChild(message);
+ const saveButtons=document.getElementById('saveChangesBtn');
+ if(saveButtons&&saveButtons.parentElement)editor.insertBefore(details,saveButtons.parentElement);
+}
 function setupExtrasToggle(){
  const extras=document.getElementById('extras');
  if(!extras||document.getElementById('extrasToggle'))return;
@@ -132,6 +167,7 @@ $('connectBtn').addEventListener('click',async()=>{
  catch(e){message('setupMsg','Connection error: '+e.message)}
 });
 setupExtrasToggle();
+organiseOptionalLessonFields();
 (async()=>{
  const url='https://cqdtodyknixyhbcmgrxh.supabase.co';
  const key='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxZHRvZHlrbml4eWhiY21ncnhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUxOTY2MTMsImV4cCI6MjExMDc3MjYxM30.4MMJAMELPrA5idvZ4bP4ssYklWlmhAN_EarRAleVDcU';
