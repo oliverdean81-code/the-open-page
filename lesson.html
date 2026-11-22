@@ -376,7 +376,7 @@ async function load() {
         if(studentSession) {
           const {data:existingResponse,error:responseLoadError} = await client
             .from('student_activity_responses')
-            .select('answer,submitted_at')
+            .select('answer,submitted_at,feedback,feedback_at')
             .eq('activity_id',a.id)
             .eq('user_id',studentSession.user.id)
             .maybeSingle();
@@ -461,6 +461,14 @@ async function load() {
         textarea.placeholder = 'Type your answer here…';
         textarea.required = true;
         if(savedResponse?.answer) textarea.value=savedResponse.answer;
+
+        if(savedResponse?.feedback) {
+          const feedbackBox=el('div','','suggested-answer');
+          feedbackBox.appendChild(el('h3','Feedback from your teacher'));
+          feedbackBox.appendChild(el('p',savedResponse.feedback));
+          if(savedResponse.feedback_at) feedbackBox.appendChild(el('small','Feedback received: '+new Date(savedResponse.feedback_at).toLocaleDateString()));
+          d.appendChild(feedbackBox);
+        }
 
         const button = el(
           'button',
