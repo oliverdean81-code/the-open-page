@@ -57,7 +57,19 @@ const PUBLISHABLE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 const client=window.supabase.createClient(PROJECT_URL,PUBLISHABLE_KEY);
 const $=id=>document.getElementById(id);
 function status(t){$('message').textContent=t}
-function signedIn(){ $('authPanel').classList.add('hidden');$('welcome').classList.remove('hidden');loadMembership() }
+async function signedIn(){
+ const {data:isTeacher,error:teacherCheckError}=await client.rpc('is_teacher');
+ if(!teacherCheckError && isTeacher===true){
+  await client.auth.signOut();
+  $('welcome').classList.add('hidden');
+  $('authPanel').classList.remove('hidden');
+  status('This is your teacher account. Please use the Teacher Dashboard to sign in. Your student account is separate.');
+  return;
+ }
+ $('authPanel').classList.add('hidden');
+ $('welcome').classList.remove('hidden');
+ loadMembership();
+}
 async function loadMembership(){
  $('membershipStatus').textContent='Checking your membership…';
  const {data:{session}}=await client.auth.getSession();
