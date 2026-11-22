@@ -376,7 +376,7 @@ async function load() {
         if(studentSession) {
           const {data:existingResponse,error:responseLoadError} = await client
             .from('student_activity_responses')
-            .select('answer_text,submitted_at')
+            .select('answer,submitted_at')
             .eq('activity_id',a.id)
             .eq('user_id',studentSession.user.id)
             .maybeSingle();
@@ -415,7 +415,7 @@ async function load() {
             .upsert({
               user_id:session.user.id,
               activity_id:a.id,
-              answer_text:answerText,
+              answer:answerText,
               submitted_at:new Date().toISOString()
             },{onConflict:'user_id,activity_id'});
 
@@ -428,7 +428,7 @@ async function load() {
           }
 
           notice.textContent='Your answer has been saved successfully.';
-          savedResponse={answer_text:answerText,submitted_at:new Date().toISOString()};
+          savedResponse={answer:answerText,submitted_at:new Date().toISOString()};
 
           let result = d.querySelector('.suggested-answer');
           if(!result) {
@@ -460,7 +460,7 @@ async function load() {
         textarea.id = 'student-answer-' + index;
         textarea.placeholder = 'Type your answer here…';
         textarea.required = true;
-        if(savedResponse?.answer_text) textarea.value=savedResponse.answer_text;
+        if(savedResponse?.answer) textarea.value=savedResponse.answer;
 
         const button = el(
           'button',
