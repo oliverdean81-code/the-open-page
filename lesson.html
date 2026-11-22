@@ -1,40 +1,449 @@
+
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lesson | The Open Page</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson | The Open Page</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
-:root{--green:#344B3D;--cream:#F7F4EC;--gold:#B39A68;--ink:#30352F}*{box-sizing:border-box}body{margin:0;font-family:Georgia,serif;background:var(--cream);color:var(--ink);line-height:1.7}header{background:var(--green);color:var(--cream);padding:24px 8%;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.brand{font-size:23px;letter-spacing:2px}.brand small{display:block;font-size:12px;letter-spacing:1px}nav a{color:var(--cream);text-decoration:none;margin-left:18px}main{max-width:900px;margin:auto;padding:45px 22px}.back{color:var(--green);text-decoration:none}h1,h2,h3{color:var(--green)}h1{font-size:clamp(32px,5vw,46px);line-height:1.2}.meta{color:#777;font-style:italic}.panel{background:white;padding:26px;border-left:4px solid var(--gold);border-radius:5px;margin:24px 0}.lesson-text{white-space:pre-wrap}.video-link{display:inline-block;background:var(--green);color:white;padding:10px 18px;text-decoration:none;border-radius:3px}.word{padding:12px 0;border-bottom:1px solid #e7e1d5}.word strong{color:var(--green)}.activity{padding:16px 0;border-bottom:1px solid #e7e1d5}.activity small{color:#777;text-transform:uppercase;letter-spacing:1px}.answer-label{display:block;font-weight:bold;color:var(--green);margin:12px 0 6px}.student-answer{display:block;width:100%;min-height:110px;padding:12px;border:1px solid #d8d1c4;border-radius:5px;font:inherit;resize:vertical}.submit-answer{margin-top:10px;background:var(--green);color:white;border:0;border-radius:4px;padding:10px 18px;font:inherit;cursor:pointer}.suggested-answer{margin-top:16px;padding:16px;background:var(--cream);border-left:3px solid var(--gold);border-radius:4px}.suggested-answer h3{margin:0 0 8px}footer{background:var(--green);color:var(--cream);text-align:center;padding:28px;margin-top:40px}
-</style></head><body>
-<header><div class="brand">THE OPEN PAGE<small>English Through Literature</small></div><nav><a href="index.html">Home</a><a href="news.html">News</a><a href="stories.html">Short Stories</a><a href="poetry.html">Poetry</a></nav></header>
-<main><a class="back" id="backLink" href="index.html">← Back to lessons</a><div id="lesson"><p>Loading lesson…</p></div></main><footer><strong>THE OPEN PAGE</strong><br>Read. Discover. Think. Express.</footer>
-<script>
-function formatActivityType(s){return String(s||'').replace(/-/g,' ').replace(/\b\w/g,ch=>ch.toUpperCase())}
-const client=window.supabase.createClient('https://cqdtodyknixyhbcmgrxh.supabase.co','sb_publishable_arlnZNY8-D3A-bVZ8Qx04w_3PtFlEX3'),root=document.getElementById('lesson');
-function el(tag,text,cls){const x=document.createElement(tag);x.textContent=text||'';if(cls)x.className=cls;return x}
-function panel(title){const p=document.createElement('section');p.className='panel';p.appendChild(el('h2',title));return p}
-async function load(){const params=new URLSearchParams(location.search);const lessonId=params.get('id');const slug=params.get('slug');if(!lessonId&&!slug){root.replaceChildren(el('p','No lesson was selected. Please return to the lessons page.'));return}
-try{
-const preview=new URLSearchParams(location.search).get('preview')==='1';
-if(preview){
- const {data:{session},error:sessionError}=await client.auth.getSession();
- if(sessionError||!session)throw new Error('Please sign in as a teacher to preview this lesson.');
- const {data:isTeacher,error:roleError}=await client.rpc('is_teacher');
- if(roleError||isTeacher!==true)throw new Error('Teacher access is required to preview unpublished lessons.');
+:root {
+  --green:#344B3D;
+  --cream:#F7F4EC;
+  --gold:#B39A68;
+  --ink:#30352F;
 }
-let lessonQuery=client.from('lessons').select('id,title,slug,summary,area_id,level_id,status');
-if(lessonId)lessonQuery=lessonQuery.eq('id',lessonId);else lessonQuery=lessonQuery.eq('slug',slug);
-if(!preview)lessonQuery=lessonQuery.eq('status','published');
-const {data:lesson,error}=await lessonQuery.single();if(error)throw error;
-const {data:privateRows,error:privateError}=await client.rpc('get_lesson_private_content',{p_lesson_id:lesson.id});
-if(privateError)throw new Error('This lesson requires an active membership. Please sign in and check your membership, then try again.');
-const privateData=Array.isArray(privateRows)?privateRows[0]:privateRows;
-const [{data:areas,error:ae},{data:levels,error:le}]=await Promise.all([client.from('learning_areas').select('id,name,slug'),client.from('levels').select('id,name,code')]);if(ae)throw ae;if(le)throw le;
-const area=areas.find(x=>String(x.id)===String(lesson.area_id)),level=levels.find(x=>String(x.id)===String(lesson.level_id));document.title=lesson.title+' | The Open Page';document.getElementById('backLink').href=area?.slug==='news'?'news.html':area?.slug==='short-stories'?'stories.html':area?.slug==='poetry'?'poetry.html':'index.html';root.replaceChildren();
-root.appendChild(el('p',(area?.name||'')+' · '+(level?.code||''),'meta'));root.appendChild(el('h1',lesson.title));if(lesson.summary)root.appendChild(el('p',lesson.summary,'meta'));
-if(privateData?.video_url){const p=panel('Video lesson'),a=el('a','Watch video','video-link');a.href=privateData.video_url;a.target='_blank';a.rel='noopener noreferrer';p.appendChild(a);root.appendChild(p)}
-if(privateData?.lesson_content){const p=panel('Reading');p.appendChild(el('div',privateData.lesson_content,'lesson-text'));root.appendChild(p)}
+* {box-sizing:border-box}
+body {
+  margin:0;
+  font-family:Georgia,serif;
+  background:var(--cream);
+  color:var(--ink);
+  line-height:1.7;
+}
+header {
+  background:var(--green);
+  color:var(--cream);
+  padding:24px 8%;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.brand {font-size:23px;letter-spacing:2px}
+.brand small {
+  display:block;
+  font-size:12px;
+  letter-spacing:1px;
+}
+nav a {
+  color:var(--cream);
+  text-decoration:none;
+  margin-left:18px;
+}
+main {
+  max-width:900px;
+  margin:auto;
+  padding:45px 22px;
+}
+.back {color:var(--green);text-decoration:none}
+h1,h2,h3 {color:var(--green)}
+h1 {font-size:clamp(32px,5vw,46px);line-height:1.2}
+.meta {color:#777;font-style:italic}
+.panel {
+  background:white;
+  padding:26px;
+  border-left:4px solid var(--gold);
+  border-radius:5px;
+  margin:24px 0;
+}
+.lesson-text {white-space:pre-wrap}
+.video-link {
+  display:inline-block;
+  background:var(--green);
+  color:white;
+  padding:10px 18px;
+  text-decoration:none;
+  border-radius:3px;
+}
+.word {
+  padding:12px 0;
+  border-bottom:1px solid #e7e1d5;
+}
+.word strong {color:var(--green)}
+.word p {margin:4px 0}
+.activity {
+  padding:16px 0;
+  border-bottom:1px solid #e7e1d5;
+}
+.activity small {
+  color:#777;
+  text-transform:uppercase;
+  letter-spacing:1px;
+}
+.answer-label {
+  display:block;
+  font-weight:bold;
+  color:var(--green);
+  margin:12px 0 6px;
+}
+.student-answer {
+  display:block;
+  width:100%;
+  min-height:110px;
+  padding:12px;
+  border:1px solid #d8d1c4;
+  border-radius:5px;
+  font:inherit;
+  resize:vertical;
+}
+.submit-answer {
+  margin-top:10px;
+  background:var(--green);
+  color:white;
+  border:0;
+  border-radius:4px;
+  padding:10px 18px;
+  font:inherit;
+  cursor:pointer;
+}
+.suggested-answer {
+  margin-top:16px;
+  padding:16px;
+  background:var(--cream);
+  border-left:3px solid var(--gold);
+  border-radius:4px;
+}
+.suggested-answer h3 {margin:0 0 8px}
+footer {
+  background:var(--green);
+  color:var(--cream);
+  text-align:center;
+  padding:28px;
+  margin-top:40px;
+}
+</style>
+</head>
 
-const {data:vocab,error:ve}=await client.from('vocabulary').select('word,definition,example').eq('lesson_id',lesson.id).order('sort_order');
+<body>
 
-const {data:acts,error:ae2}=await client.from('activities').select('id,activity_type,prompt,suggested_answer').eq('lesson_id',lesson.id).order('sort_order');if(ae2)throw ae2;if(acts?.length){const p=panel('Activities');acts.forEach((a,index)=>{const d=el('div','','activity');d.appendChild(el('small',formatActivityType(a.activity_type)));d.appendChild(el('p',a.prompt));const form=document.createElement('form');form.addEventListener('submit',event=>{event.preventDefault();let result=d.querySelector('.suggested-answer');if(!result){result=el('div','','suggested-answer');result.appendChild(el('h3','Suggested answer'));result.appendChild(el('p',a.suggested_answer||'No suggested answer has been provided for this activity.'));d.appendChild(result)} });const label=el('label','Write your answer:','answer-label');label.htmlFor='student-answer-'+index;const textarea=el('textarea','','student-answer');textarea.id='student-answer-'+index;textarea.placeholder='Type your answer here…';textarea.required=true;const button=el('button','Submit answer','submit-answer');button.type='submit';form.append(label,textarea,button);d.appendChild(form);p.appendChild(d)});root.appendChild(p)}
-}catch(e){root.replaceChildren(el('p','This lesson could not be loaded: '+e.message))}}
+<header>
+  <div class="brand">
+    THE OPEN PAGE
+    <small>English Through Literature</small>
+  </div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="news.html">News</a>
+    <a href="stories.html">Short Stories</a>
+    <a href="poetry.html">Poetry</a>
+  </nav>
+</header>
+
+<main>
+  <a class="back" id="backLink" href="index.html">← Back to lessons</a>
+  <div id="lesson"><p>Loading lesson…</p></div>
+</main>
+
+<footer>
+  <strong>THE OPEN PAGE</strong><br>
+  Read. Discover. Think. Express.
+</footer>
+
+<script>
+
+function formatActivityType(s) {
+  return String(s||'')
+    .replace(/-/g,' ')
+    .replace(/\b\w/g,ch=>ch.toUpperCase());
+}
+
+const client = window.supabase.createClient(
+  'https://cqdtodyknixyhbcmgrxh.supabase.co',
+  'sb_publishable_arlnZNY8-D3A-bVZ8Qx04w_3PtFlEX3'
+);
+
+const root = document.getElementById('lesson');
+
+function el(tag,text,cls) {
+  const x = document.createElement(tag);
+  x.textContent = text || '';
+  if(cls) x.className = cls;
+  return x;
+}
+
+function panel(title) {
+  const p = document.createElement('section');
+  p.className = 'panel';
+  p.appendChild(el('h2',title));
+  return p;
+}
+
+async function load() {
+
+  const params = new URLSearchParams(location.search);
+  const lessonId = params.get('id');
+  const slug = params.get('slug');
+
+  if(!lessonId && !slug) {
+    root.replaceChildren(el('p','No lesson was selected. Please return to the lessons page.'));
+    return;
+  }
+
+  try {
+
+    const preview = new URLSearchParams(location.search).get('preview') === '1';
+
+    if(preview) {
+      const {data:{session},error:sessionError} =
+        await client.auth.getSession();
+
+      if(sessionError || !session)
+        throw new Error('Please sign in as a teacher to preview this lesson.');
+
+      const {data:isTeacher,error:roleError} =
+        await client.rpc('is_teacher');
+
+      if(roleError || isTeacher !== true)
+        throw new Error('Teacher access is required to preview unpublished lessons.');
+    }
+
+    let lessonQuery = client.from('lessons')
+      .select('id,title,slug,summary,area_id,level_id,status');
+
+    if(lessonId)
+      lessonQuery = lessonQuery.eq('id',lessonId);
+    else
+      lessonQuery = lessonQuery.eq('slug',slug);
+
+    if(!preview)
+      lessonQuery = lessonQuery.eq('status','published');
+
+    const {data:lesson,error} = await lessonQuery.single();
+
+    if(error) throw error;
+
+    const {data:privateRows,error:privateError} =
+      await client.rpc('get_lesson_private_content',{
+        p_lesson_id:lesson.id
+      });
+
+    if(privateError)
+      throw new Error('This lesson requires an active membership. Please sign in and check your membership, then try again.');
+
+    const privateData = Array.isArray(privateRows)
+      ? privateRows[0]
+      : privateRows;
+
+    const [
+      {data:areas,error:ae},
+      {data:levels,error:le}
+    ] = await Promise.all([
+      client.from('learning_areas').select('id,name,slug'),
+      client.from('levels').select('id,name,code')
+    ]);
+
+    if(ae) throw ae;
+    if(le) throw le;
+
+    const area = areas.find(
+      x => String(x.id) === String(lesson.area_id)
+    );
+
+    const level = levels.find(
+      x => String(x.id) === String(lesson.level_id)
+    );
+
+    document.title = lesson.title + ' | The Open Page';
+
+    document.getElementById('backLink').href =
+      area?.slug === 'news' ? 'news.html' :
+      area?.slug === 'short-stories' ? 'stories.html' :
+      area?.slug === 'poetry' ? 'poetry.html' :
+      'index.html';
+
+    root.replaceChildren();
+
+    root.appendChild(el(
+      'p',
+      (area?.name || '') + ' · ' + (level?.code || ''),
+      'meta'
+    ));
+
+    root.appendChild(el('h1',lesson.title));
+
+    if(lesson.summary)
+      root.appendChild(el('p',lesson.summary,'meta'));
+
+    // VIDEO LESSON
+
+    if(privateData?.video_url) {
+      const p = panel('Video lesson');
+      const a = el('a','Watch video','video-link');
+
+      a.href = privateData.video_url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+
+      p.appendChild(a);
+      root.appendChild(p);
+    }
+
+    // READING
+
+    if(privateData?.lesson_content) {
+      const p = panel('Reading');
+
+      p.appendChild(el(
+        'div',
+        privateData.lesson_content,
+        'lesson-text'
+      ));
+
+      root.appendChild(p);
+    }
+
+    // VOCABULARY
+
+    const {data:vocab,error:ve} = await client
+      .from('vocabulary')
+      .select('word,definition,example')
+      .eq('lesson_id',lesson.id)
+      .order('word',{ascending:true});
+
+    if(ve) throw ve;
+
+    if(vocab && vocab.length) {
+
+      const p = panel('Vocabulary');
+
+      vocab.forEach(item => {
+
+        const entry = el('div','','word');
+
+        entry.appendChild(el('strong',item.word));
+
+        if(item.definition) {
+          entry.appendChild(el('p',item.definition));
+        }
+
+        if(item.example) {
+          entry.appendChild(el(
+            'p',
+            'Example: ' + item.example
+          ));
+        }
+
+        p.appendChild(entry);
+
+      });
+
+      root.appendChild(p);
+
+    }
+
+    // ACTIVITIES
+
+    const {data:acts,error:ae2} = await client
+      .from('activities')
+      .select('id,activity_type,prompt,suggested_answer')
+      .eq('lesson_id',lesson.id)
+      .order('sort_order');
+
+    if(ae2) throw ae2;
+
+    if(acts?.length) {
+
+      const p = panel('Activities');
+
+      acts.forEach((a,index) => {
+
+        const d = el('div','','activity');
+
+        d.appendChild(el(
+          'small',
+          formatActivityType(a.activity_type)
+        ));
+
+        d.appendChild(el('p',a.prompt));
+
+        const form = document.createElement('form');
+
+        form.addEventListener('submit',event => {
+
+          event.preventDefault();
+
+          let result = d.querySelector('.suggested-answer');
+
+          if(!result) {
+
+            result = el('div','','suggested-answer');
+
+            result.appendChild(el(
+              'h3',
+              'Suggested answer'
+            ));
+
+            result.appendChild(el(
+              'p',
+              a.suggested_answer ||
+              'No suggested answer has been provided for this activity.'
+            ));
+
+            d.appendChild(result);
+          }
+
+        });
+
+        const label = el(
+          'label',
+          'Write your answer:',
+          'answer-label'
+        );
+
+        label.htmlFor = 'student-answer-' + index;
+
+        const textarea = el(
+          'textarea',
+          '',
+          'student-answer'
+        );
+
+        textarea.id = 'student-answer-' + index;
+        textarea.placeholder = 'Type your answer here…';
+        textarea.required = true;
+
+        const button = el(
+          'button',
+          'Submit answer',
+          'submit-answer'
+        );
+
+        button.type = 'submit';
+
+        form.append(label,textarea,button);
+        d.appendChild(form);
+        p.appendChild(d);
+
+      });
+
+      root.appendChild(p);
+    }
+
+  } catch(e) {
+
+    root.replaceChildren(
+      el('p','This lesson could not be loaded: ' + e.message)
+    );
+
+  }
+}
+
 load();
-</script></body></html>
+
+</script>
+
+</body>
+</html>
