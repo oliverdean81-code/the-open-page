@@ -12,7 +12,16 @@ function el(tag,text,cls){const x=document.createElement(tag);x.textContent=text
 function panel(title){const p=document.createElement('section');p.className='panel';p.appendChild(el('h2',title));return p}
 async function load(){const slug=new URLSearchParams(location.search).get('slug');if(!slug){root.replaceChildren(el('p','No lesson was selected. Please return to the lessons page.'));return}
 try{
-const {data:lesson,error}=await client.from('lessons').select('id,title,slug,summary,area_id,level_id,status').eq('slug',slug).eq('status','published').single();if(error)throw error;
+const preview=new URLSearchParams(location.search).get('preview')==='1';
+if(preview){
+ const {data:{session},error:sessionError}=await client.auth.getSession();
+ if(sessionError||!session)throw new Error('Please sign in as a teacher to preview this lesson.');
+ const {data:isTeacher,error:roleError}=await client.rpc('is_teacher');
+ if(roleError||isTeacher!==true)throw new Error('Teacher access is required to preview unpublished lessons.');
+}
+let lessonQuery=client.from('lessons').select('id,title,slug,summary,area_id,level_id,status').eq('slug',slug);
+if(!preview)lessonQuery=lessonQuery.eq('status','published');
+const {data:lesson,error}=await lessonQuery.single();if(error)throw error;
 const {data:privateRows,error:privateError}=await client.rpc('get_lesson_private_content',{p_lesson_id:lesson.id});
 if(privateError)throw new Error('This lesson requires an active membership. Please sign in and check your membership, then try again.');
 const privateData=Array.isArray(privateRows)?privateRows[0]:privateRows;
