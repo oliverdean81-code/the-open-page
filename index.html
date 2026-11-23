@@ -221,12 +221,13 @@ nav a.literature-nav-button,nav a.literature-nav-button:link,nav a.literature-na
 
 <header>
   <div class="logo">THE OPEN PAGE</div>
- <nav>
+ <nav id="main-navigation">
   <a href="#home">Home</a>
   <a href="literature-news-courses.html" class="literature-nav-button">Literature &amp; News Courses</a>
   <a href="specialist-courses.html" class="specialist-nav-button">Specialist Course Library</a>
+  <button type="button" class="mobile-menu-toggle" id="mobileMenuToggle" aria-controls="main-navigation" aria-expanded="false">☰ Menu</button>
   <a href="open-door.html">Open Door</a>
- <a href="about.html">About</a>
+  <a href="about.html">About</a>
   <a href="contact.html">Contact</a>
   <a href="teacher.html">Teacher Login</a>
   <a href="student.html">Student Login</a>
@@ -268,6 +269,26 @@ nav a.literature-nav-button,nav a.literature-nav-button:link,nav a.literature-na
     <p>The explanations on this page are available in your language. The learning materials are in English so you can practise and develop your skills.</p>
   </div>
 </section>
+<script>
+(function(){
+ const nav=document.getElementById('main-navigation');
+ const toggle=document.getElementById('mobileMenuToggle');
+ if(!nav||!toggle)return;
+ toggle.addEventListener('click',function(){
+  const expanded=toggle.getAttribute('aria-expanded')==='true';
+  toggle.setAttribute('aria-expanded',String(!expanded));
+  nav.classList.toggle('open',!expanded);
+  toggle.textContent=expanded?'☰ Menu':'✕ Close';
+ });
+ nav.querySelectorAll('a').forEach(function(link){
+  link.addEventListener('click',function(){
+   nav.classList.remove('open');
+   toggle.setAttribute('aria-expanded','false');
+   toggle.textContent='☰ Menu';
+  });
+ });
+})();
+</script>
 <script>
 (function () {
   const translations = {
@@ -598,11 +619,19 @@ img,video,iframe{max-width:100%}
   table{display:block;max-width:100%;overflow-x:auto}
   footer{padding:24px 16px}
 }
+@media(max-width:700px){
+  header nav{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px}
+  header nav a{display:inline-block}
+  header nav a:nth-of-type(n+4){display:none}
+  header nav.open a:nth-of-type(n+4){display:inline-block}
+  .mobile-menu-toggle{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:9px 15px;border:1px solid #ddc99d;border-radius:4px;background:transparent;color:#fffdf8;font:600 15px Arial,sans-serif;cursor:pointer}
+}
 @media(max-width:380px){
   header nav a,nav a{font-size:13px;padding:7px 8px}
   main{padding-left:12px!important;padding-right:12px!important}
   .card,.course,.level,.panel,.lesson{padding:15px!important}
 }
+.mobile-menu-toggle{display:none}
 </style>
 </head>
 <body>
