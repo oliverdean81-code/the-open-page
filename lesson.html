@@ -318,6 +318,17 @@ async function load() {
         summary.style.cssText='cursor:pointer;font-weight:bold;color:var(--green);font-size:19px';
         details.appendChild(summary);
         if(data.notes){const notes=el('div',data.notes,'lesson-text');notes.style.marginTop='16px';details.appendChild(notes)}
+        if(Array.isArray(data.vocabulary)&&data.vocabulary.some(v=>v.word)){
+          const vocabBox=document.createElement('div');vocabBox.style.cssText='margin:18px 0;padding:15px;background:var(--cream);border-radius:6px';
+          vocabBox.appendChild(el('h3','Difficult vocabulary'));
+          data.vocabulary.filter(v=>v.word).forEach(v=>{
+            const entry=el('div','','word');
+            entry.appendChild(el('strong',String(v.word)));
+            if(v.definition)entry.appendChild(el('p',String(v.definition)));
+            vocabBox.appendChild(entry);
+          });
+          details.appendChild(vocabBox);
+        }
         if(data.video&&/^https?:\/\//i.test(data.video)){
           const url=data.video.trim();
           let embed=null;
