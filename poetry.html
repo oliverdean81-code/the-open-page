@@ -230,8 +230,10 @@ function addText(parent,tag,value,className){
 }
 function showNewsLesson(lesson,target){
  const card=document.createElement('article');card.className='published-lesson';
- const link=document.createElement('a');link.href='lesson.html?id='+encodeURIComponent(lesson.id);link.textContent=lesson.title;link.className='lesson-title-link';card.appendChild(link);
+ const title=document.createElement('h3');title.textContent=lesson.title;title.className='lesson-title-link';card.appendChild(title);
  if(lesson.summary)addText(card,'p',lesson.summary);
+ else addText(card,'p','A new lesson in this course. Full teaching materials are available to enrolled students.');
+ const note=addText(card,'p','Lesson preview · Reading, video, vocabulary and activities are reserved for students.','placeholder');note.style.fontSize='0.9em';
  target.appendChild(card);
 }
 async function loadPublishedNews(){
