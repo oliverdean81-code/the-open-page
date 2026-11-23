@@ -759,8 +759,17 @@ $('cancelWordEditBtn').addEventListener('click',()=>{resetVocabularyEditor();mes
 function escapeText(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function formatActivityType(s){return String(s||'').replace(/-/g,' ').replace(/\b\w/g,ch=>ch.toUpperCase())}
 $('addWordBtn').addEventListener('click',async()=>{
- const lesson_id=$('lessonId').value,word=$('word').value.trim(),definition=$('definition').value.trim();
- if(!lesson_id||!word||!definition){message('saveMsg','Add a word and definition, and save the lesson first.');return}
+ let lesson_id=$('lessonId').value;
+ const word=$('word').value.trim(),definition=$('definition').value.trim();
+ if(!word||!definition){message('saveMsg','Please enter both a vocabulary word and its definition.');return}
+ if(!lesson_id){
+  if(!$('title').value.trim()){message('saveMsg','Please enter a lesson title first. The lesson will be saved automatically as a private draft.');$('title').focus();return}
+  const button=$('addWordBtn');button.disabled=true;
+  message('saveMsg','Saving your new lesson privately as a draft before adding vocabulary…');
+  try{await saveLesson('draft')}finally{button.disabled=false}
+  lesson_id=$('lessonId').value;
+  if(!lesson_id){return}
+ }
  const record={word,definition,example:$('example').value.trim()||null};
  if(editingVocabularyId){
   const {error}=await supabaseClient.from('vocabulary').update(record).eq('id',editingVocabularyId).eq('lesson_id',lesson_id);
