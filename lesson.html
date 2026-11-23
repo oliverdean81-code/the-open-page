@@ -301,8 +301,16 @@ async function load() {
     // VIDEO LESSON
 
     if(privateData?.video_url) {
-      const p = panel('Video lesson');
-      const rawVideoUrl=String(privateData.video_url).trim();
+      let lessonVideos=[];
+      const stored=String(privateData.video_url).trim();
+      if(stored.startsWith('[')){
+        try{const parsed=JSON.parse(stored);if(Array.isArray(parsed))lessonVideos=parsed.filter(v=>typeof v==='string')}catch(e){}
+      }else lessonVideos=[stored];
+      lessonVideos=lessonVideos.filter(v=>/^https?:\\/\\//i.test(v.trim()));
+      if(lessonVideos.length){
+      const p = panel(lessonVideos.length>1?'Lesson videos':'Video lesson');
+      lessonVideos.forEach((videoUrl,index)=>{
+      const rawVideoUrl=videoUrl.trim();
       let videoEmbed=null;
       try {
         const parsed=new URL(rawVideoUrl);
@@ -323,7 +331,7 @@ async function load() {
         const frame=el('div','','video-frame');
         const iframe=document.createElement('iframe');
         iframe.src=videoEmbed;
-        iframe.title='Lesson video';
+        iframe.title='Lesson video '+(index+1);
         iframe.loading='lazy';
         iframe.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
         iframe.allowFullscreen=true;
@@ -332,9 +340,12 @@ async function load() {
       }
       const a=el('a',videoEmbed?'Open video in a new tab':'Watch video','video-link');
       a.href=rawVideoUrl;a.target='_blank';a.rel='noopener noreferrer';
+      if(lessonVideos.length>1){const heading=el('p','Video '+(index+1),'meta');p.insertBefore(heading,videoEmbed?frame:a)}
       p.appendChild(a);
+      });
       p.id='video-section';
       root.appendChild(p);
+      }
     }
 
     // READING
