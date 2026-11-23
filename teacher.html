@@ -283,13 +283,14 @@ function setupExtrasToggle(){
   button.querySelector('span:last-child').textContent=extras.hidden?'+':'−';
  });
 }
+function isHttpVideoUrl(value){return /^https?:\/\//i.test(value)}
 function parseLessonVideos(value){
  if(!value)return [];
  const raw=String(value).trim();
  if(raw.startsWith('[')){
-  try{const arr=JSON.parse(raw);if(Array.isArray(arr))return arr.filter(v=>typeof v==='string'&&/^https?:\\/\\//i.test(v.trim())).map(v=>v.trim())}catch(e){}
+  try{const arr=JSON.parse(raw);if(Array.isArray(arr))return arr.filter(v=>typeof v==='string'&&isHttpVideoUrl(v.trim())).map(v=>v.trim())}catch(e){}
  }
- return /^https?:\\/\\//i.test(raw)?[raw]:[];
+ return isHttpVideoUrl(raw)?[raw]:[];
 }
 function addExtraVideoField(value){
  const container=$('additionalVideos');
@@ -308,7 +309,7 @@ function setLessonVideos(value){
 }
 function collectLessonVideos(){
  const videos=[$('video').value,...document.querySelectorAll('.additional-video-url')].map(v=>typeof v==='string'?v.trim():v.value.trim()).filter(Boolean);
- if(videos.some(v=>!/^https?:\\/\\//i.test(v)))throw new Error('Please enter valid video links beginning with https://');
+ if(videos.some(v=>!isHttpVideoUrl(v)))throw new Error('Please enter valid video links beginning with https://');
  return videos.length>1?JSON.stringify(videos):(videos[0]||null);
 }
 let supabaseClient=null, currentUser=null, editingVocabularyId=null, editingActivityId=null;
