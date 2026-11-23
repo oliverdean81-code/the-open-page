@@ -522,13 +522,73 @@ function renderLessonProgress(lessons){
  $('lessonProgressHint').textContent='The highlighted sections have the fewest published lessons. Counts refresh when you save, publish, or delete a lesson.';
 }
 
+function orderedCourseLessons(items){
+ const courses=new Map();
+ for(const lesson of items){
+  const key=lesson.area_id+'|'+lesson.level_id;
+  if(!courses.has(key))courses.set(key,[]);
+  courses.get(key).push(lesson);
+ }
+ const ordered=[];
+ for(const course of courses.values()){
+  course.sort((a,b)=>{
+   const ap=Number(a.sort_order)||0,bp=Number(b.sort_order)||0;
+   if(ap>0&&bp>0&&ap!==bp)return ap-bp;
+   if(ap>0&&bp<=0)return -1;
+   if(bp>0&&ap<=0)return 1;
+   return new Date(a.created_at)-new Date(b.created_at);
+  });
+  ordered.push(...course);
+ }
+ return ordered;
+}
+async function moveCourseLesson(lesson,step,allLessons){
+ const course=orderedCourseLessons(allLessons.filter(item=>item.area_id===lesson.area_id&&item.level_id===lesson.level_id));
+ const from=course.findIndex(item=>item.id===lesson.id);
+ const to=from+step;
+ if(from<0||to<0||to>=course.length)return;
+ [course[from],course[to]]=[course[to],course[from]];
+ message('saveMsg','Saving the new lesson order…');
+ for(let i=0;i<course.length;i++){
+  const {error}=await supabaseClient.from('lessons').update({sort_order:i+1}).eq('id',course[i].id);
+  if(error){message('saveMsg','Could not update the order: '+error.message);await loadLessons();return}
+ }
+ message('saveMsg','Lesson order saved. You can change it again whenever you like.');
+ await loadLessons();
+}
 async function loadLessons(){
- const {data,error}=await supabaseClient.from('lessons').select('id,title,status,area_id,level_id,created_at,learning_areas(name,slug),levels(name,code)').order('created_at',{ascending:false});
+ const {data,error}=await supabaseClient.from('lessons').select('id,title,status,area_id,level_id,sort_order,created_at,learning_areas(name,slug),levels(name,code)').order('created_at',{ascending:true});
  if(error){$('lessonList').textContent='Could not load lessons: '+error.message;$('lessonProgressSummary').textContent='Could not load lesson counts: '+error.message;return}
  renderLessonProgress(data);
- $('lessonList').innerHTML='';
+ $('lessonList').replaceChildren();
  if(!data.length){$('lessonList').innerHTML='<p class="muted">No lessons yet. Create your first lesson below.</p>';return}
- data.forEach(l=>{const div=document.createElement('div');div.className='lesson';const titleLink=document.createElement('a');titleLink.textContent=l.title;titleLink.href='lesson.html?id='+encodeURIComponent(l.id)+'&preview=1';titleLink.target='_blank';titleLink.rel='noopener';titleLink.className='teacher-lesson-title';const small=document.createElement('small');small.textContent=(l.learning_areas?.name||'')+' · '+(l.levels?.code||'')+' · '+l.status;const actions=document.createElement('div');actions.className='lesson-actions';const editBtn=document.createElement('button');editBtn.type='button';editBtn.className='secondary';editBtn.textContent='Edit lesson';editBtn.addEventListener('click',()=>editLesson(l.id));const deleteBtn=document.createElement('button');deleteBtn.type='button';deleteBtn.className='danger';deleteBtn.textContent='Delete lesson';deleteBtn.addEventListener('click',()=>deleteLesson(l.id,l.title));actions.append(editBtn,deleteBtn);div.append(titleLink,small,actions);$('lessonList').append(div)})
+ const ordered=orderedCourseLessons(data);
+ const groups=new Map();
+ for(const l of ordered){
+  const key=l.area_id+'|'+l.level_id;
+  if(!groups.has(key))groups.set(key,[]);
+  groups.get(key).push(l);
+ }
+ for(const group of groups.values()){
+  const first=group[0];
+  const heading=document.createElement('h3');
+  heading.textContent=(first.learning_areas?.name||'Lessons')+' — '+(first.levels?.code||'');
+  $('lessonList').append(heading);
+  group.forEach((l,index)=>{
+   const div=document.createElement('div');div.className='lesson';
+   const titleLink=document.createElement('a');titleLink.textContent=(index+1)+'. '+l.title;titleLink.href='lesson.html?id='+encodeURIComponent(l.id)+'&preview=1';titleLink.target='_blank';titleLink.rel='noopener';titleLink.className='teacher-lesson-title';
+   const small=document.createElement('small');small.textContent=l.status;
+   const actions=document.createElement('div');actions.className='lesson-actions';
+   if(['poetry','short-stories','short_stories','stories'].includes(l.learning_areas?.slug)){
+    const up=document.createElement('button');up.type='button';up.className='secondary';up.textContent='↑ Move up';up.disabled=index===0;up.addEventListener('click',()=>moveCourseLesson(l,-1,data));
+    const down=document.createElement('button');down.type='button';down.className='secondary';down.textContent='↓ Move down';down.disabled=index===group.length-1;down.addEventListener('click',()=>moveCourseLesson(l,1,data));
+    actions.append(up,down);
+   }
+   const editBtn=document.createElement('button');editBtn.type='button';editBtn.className='secondary';editBtn.textContent='Edit lesson';editBtn.addEventListener('click',()=>editLesson(l.id));
+   const deleteBtn=document.createElement('button');deleteBtn.type='button';deleteBtn.className='danger';deleteBtn.textContent='Delete lesson';deleteBtn.addEventListener('click',()=>deleteLesson(l.id,l.title));
+   actions.append(editBtn,deleteBtn);div.append(titleLink,small,actions);$('lessonList').append(div);
+  });
+ }
 }
 
 
