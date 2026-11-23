@@ -15,7 +15,7 @@ label{display:block;font:600 14px Arial,sans-serif;margin:14px 0 6px}input,selec
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
 button{border:0;border-radius:7px;padding:12px 18px;background:var(--green);color:white;font:600 14px Arial,sans-serif;cursor:pointer}button.secondary{background:#e9e5db;color:var(--green)}button.gold{background:var(--gold);color:#fff}
 .status{padding:10px 12px;border-radius:7px;background:#f1eee6;margin:12px 0;font:14px Arial,sans-serif}.hidden{display:none!important}.muted{color:#6e746d;font:14px Arial,sans-serif}.lesson{padding:14px;border:1px solid var(--line);border-radius:8px;margin:10px 0}.lesson strong{color:var(--green)}.lesson small{display:block;color:#68736b;margin:4px 0 10px}.lesson-actions{display:flex;gap:8px;flex-wrap:wrap}.lesson button.danger{background:#a43d35;color:#fff}.teacher-lesson-title{display:inline-block;color:var(--green);font-weight:bold;text-decoration:none}.teacher-lesson-title:hover{text-decoration:underline;color:var(--gold)}
-#editor{padding:28px}
+.lesson-progress{padding:16px;margin:0 0 22px;background:#f7f4ec;border:1px solid var(--line);border-radius:9px}.lesson-progress-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.lesson-progress-item{padding:11px;border:1px solid var(--line);border-radius:8px;background:white;font:14px Arial,sans-serif}.lesson-progress-item strong{display:block;font-size:22px;color:var(--green);margin-top:5px}.lesson-progress-item.lowest{border-color:var(--gold);background:#fffaf0}.lesson-progress-item small{display:block;color:#69746d;margin-top:3px}@media(max-width:650px){.lesson-progress-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:380px){.lesson-progress-grid{grid-template-columns:1fr}}#editor{padding:28px}
 #editor>h2{margin-bottom:22px}
 #editor label{margin-top:18px}
 #editor textarea{line-height:1.55}
@@ -205,6 +205,12 @@ img,video,iframe{max-width:100%}
 <p class="muted">This prepares a tailored prompt; it does not automatically generate or publish AI-written content. You remain in control of the final material.</p></div>
 <div class="panel workspace-panel" id="editor" data-workspace-panel="teaching">
 <h2 id="editorHeading">Create a lesson</h2>
+<div id="lessonProgress" class="lesson-progress" aria-live="polite">
+ <h3 style="margin:0 0 6px">Published lesson tracker</h3>
+ <p class="muted" id="lessonProgressSummary">Loading published lesson counts…</p>
+ <div id="lessonProgressGrid" class="lesson-progress-grid"></div>
+ <p class="muted" id="lessonProgressHint" style="margin:10px 0 0"></p>
+</div>
 <input id="lessonId" type="hidden"><input id="lessonStatus" type="hidden" value="draft">
 <div class="grid">
 <div><label for="area">Learning area</label><select id="area"><option value="news">English Through the News</option><option value="short-stories">Short Stories</option><option value="poetry">Poetry</option></select></div>
@@ -432,9 +438,28 @@ async function loadStudentResponses(){
  });
 }
 
+function renderLessonProgress(lessons){
+ const areas=[['news','English Through the News'],['short-stories','Short Stories'],['poetry','Poetry']];
+ const levels=['B1','B2','C1'];
+ const published=lessons.filter(l=>l.status==='published');
+ const cells=areas.flatMap(([slug,label])=>levels.map(level=>({slug,label,level,count:published.filter(l=>l.learning_areas?.slug===slug&&l.levels?.code===level).length})));
+ const min=Math.min(...cells.map(x=>x.count));
+ $('lessonProgressSummary').textContent=published.length+' published lesson'+(published.length===1?'':'s')+' across all learning areas and levels. Drafts are not included.';
+ const grid=$('lessonProgressGrid');grid.replaceChildren();
+ cells.forEach(item=>{
+  const cell=document.createElement('div');cell.className='lesson-progress-item'+(item.count===min?' lowest':'');
+  const label=document.createElement('span');label.textContent=item.label+' · '+item.level;
+  const count=document.createElement('strong');count.textContent=item.count+' published';
+  const hint=document.createElement('small');hint.textContent=item.count===min?'Fewest lessons — consider next':'';
+  cell.append(label,count,hint);grid.append(cell);
+ });
+ $('lessonProgressHint').textContent='The highlighted sections have the fewest published lessons. Counts refresh when you save, publish, or delete a lesson.';
+}
+
 async function loadLessons(){
- const {data,error}=await supabaseClient.from('lessons').select('id,title,status,area_id,level_id,created_at,learning_areas(name),levels(name,code)').order('created_at',{ascending:false});
- if(error){$('lessonList').textContent='Could not load lessons: '+error.message;return}
+ const {data,error}=await supabaseClient.from('lessons').select('id,title,status,area_id,level_id,created_at,learning_areas(name,slug),levels(name,code)').order('created_at',{ascending:false});
+ if(error){$('lessonList').textContent='Could not load lessons: '+error.message;$('lessonProgressSummary').textContent='Could not load lesson counts: '+error.message;return}
+ renderLessonProgress(data);
  $('lessonList').innerHTML='';
  if(!data.length){$('lessonList').innerHTML='<p class="muted">No lessons yet. Create your first lesson below.</p>';return}
  data.forEach(l=>{const div=document.createElement('div');div.className='lesson';const titleLink=document.createElement('a');titleLink.textContent=l.title;titleLink.href='lesson.html?id='+encodeURIComponent(l.id)+'&preview=1';titleLink.target='_blank';titleLink.rel='noopener';titleLink.className='teacher-lesson-title';const small=document.createElement('small');small.textContent=(l.learning_areas?.name||'')+' · '+(l.levels?.code||'')+' · '+l.status;const actions=document.createElement('div');actions.className='lesson-actions';const editBtn=document.createElement('button');editBtn.type='button';editBtn.className='secondary';editBtn.textContent='Edit lesson';editBtn.addEventListener('click',()=>editLesson(l.id));const deleteBtn=document.createElement('button');deleteBtn.type='button';deleteBtn.className='danger';deleteBtn.textContent='Delete lesson';deleteBtn.addEventListener('click',()=>deleteLesson(l.id,l.title));actions.append(editBtn,deleteBtn);div.append(titleLink,small,actions);$('lessonList').append(div)})
