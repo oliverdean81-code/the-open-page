@@ -280,9 +280,17 @@ img,video,iframe{max-width:100%}
 <label for="content">Reading text and lesson content</label><textarea id="content" style="min-height:230px" placeholder="Paste your article, short story, poem, transcript, or lesson notes here."></textarea>
 <div class="actions" style="margin-top:8px"><button type="button" id="selectVocabBtn" class="secondary">Add highlighted word to vocabulary</button></div>
 <p id="selectVocabMsg" class="muted" style="margin:6px 0 12px">Highlight a word or phrase in the reading text, then click the button. Add its definition below.</p>
-<label for="video">Video lesson link (optional)</label><input id="video" type="url" placeholder="https://...">
+<div id="literaryTemplate" class="hidden" style="margin-top:20px;padding:18px;border:1px solid var(--line);border-radius:9px;background:#fbfaf7">
+<h3>Literature lesson sections</h3><p class="muted">Fill in each section and add its own video. You can save a draft at any time. Existing reading text is kept separately.</p>
+<details class="editor-extra-toggle-wrap" open><summary>1. Introduction</summary><div class="optional-settings-body"><label for="litNotes0">Written explanation</label><textarea id="litNotes0" placeholder="Write your introduction notes here"></textarea><label for="litVideo0">Video link for this section (optional)</label><input type="url" id="litVideo0" placeholder="https://..."></div></details>
+<details class="editor-extra-toggle-wrap" ><summary>2. Themes</summary><div class="optional-settings-body"><label for="litNotes1">Written explanation</label><textarea id="litNotes1" placeholder="Write your themes notes here"></textarea><label for="litVideo1">Video link for this section (optional)</label><input type="url" id="litVideo1" placeholder="https://..."></div></details>
+<details class="editor-extra-toggle-wrap" ><summary>3. Style and Literary Techniques</summary><div class="optional-settings-body"><label for="litNotes2">Written explanation</label><textarea id="litNotes2" placeholder="Write your style and literary techniques notes here"></textarea><label for="litVideo2">Video link for this section (optional)</label><input type="url" id="litVideo2" placeholder="https://..."></div></details>
+<details class="editor-extra-toggle-wrap" ><summary>4. Difficult Vocabulary</summary><div class="optional-settings-body"><label for="litNotes3">Written explanation</label><textarea id="litNotes3" placeholder="Write your difficult vocabulary notes here"></textarea><label for="litVideo3">Video link for this section (optional)</label><input type="url" id="litVideo3" placeholder="https://..."></div></details>
+<label for="litUploadTarget">Upload a video into section</label><select id="litUploadTarget"><option value="0">Introduction</option><option value="1">Themes</option><option value="2">Style and Literary Techniques</option><option value="3">Difficult Vocabulary</option></select><p class="muted">Choose a section here, then use the existing Upload video control below.</p></div>
+<div id="generalVideoFields"><label for="video">Video lesson link (optional)</label><input id="video" type="url" placeholder="https://...">
 <label for="videoFile">Or upload a video from your computer (MP4, WebM or MOV; maximum 50 MB)</label>
 <input id="videoFile" type="file" accept="video/mp4,video/webm,video/quicktime">
+</div>
 <div class="actions"><button type="button" id="uploadVideoBtn" class="secondary">Upload video</button></div>
 <div id="videoUploadMsg" class="status">Choose a video file, then click Upload video. The uploaded video link will be added to the lesson automatically.</div>
 <div class="actions"><button id="saveChangesBtn" class="secondary">Save changes</button><button id="saveDraftBtn" class="secondary">Save as draft</button><button id="publishBtn">Publish lesson</button><button id="cancelBtn" class="secondary">Clear form</button></div>
@@ -524,7 +532,7 @@ async function enterDashboard(){
 $('signOutBtn').addEventListener('click',async()=>{await supabaseClient.auth.signOut();currentUser=null;show('dashboard',false);show('loginPanel')});
 $('newLessonBtn').addEventListener('click',()=>{resetEditor();$('editor').scrollIntoView({behavior:'smooth'})});
 $('cancelBtn').addEventListener('click',resetEditor);
-function resetEditor(){editingVocabularyId=null;editingActivityId=null;$('addWordBtn').textContent='Add vocabulary';$('addActivityBtn').textContent='Add activity';show('cancelWordEditBtn',false);show('cancelActivityEditBtn',false);['lessonId','title','slug','summary','content','video','word','definition','example','prompt','answer'].forEach(id=>$(id).value='');$('lessonStatus').value='draft';$('additionalVideos').replaceChildren();$('videoFile').value='';message('videoUploadMsg','Choose a video file, then click Upload video. The uploaded video link will be added to the lesson automatically.');$('area').value='news';$('level').value='B1';$('editorHeading').textContent='Create a lesson';show('extras',false);message('saveMsg','Create a lesson first. You can then add its vocabulary and activities.')}
+function resetEditor(){resetLiteratureSections();editingVocabularyId=null;editingActivityId=null;$('addWordBtn').textContent='Add vocabulary';$('addActivityBtn').textContent='Add activity';show('cancelWordEditBtn',false);show('cancelActivityEditBtn',false);['lessonId','title','slug','summary','content','video','word','definition','example','prompt','answer'].forEach(id=>$(id).value='');$('lessonStatus').value='draft';$('additionalVideos').replaceChildren();$('videoFile').value='';message('videoUploadMsg','Choose a video file, then click Upload video. The uploaded video link will be added to the lesson automatically.');$('area').value='news';updateLiteratureEditor();$('level').value='B1';$('editorHeading').textContent='Create a lesson';show('extras',false);message('saveMsg','Create a lesson first. You can then add its vocabulary and activities.')}
 $('title').addEventListener('input',()=>{if(!$('lessonId').value)$('slug').value=safeSlug($('title').value)});
 let studentInboxTab='new';
 document.querySelectorAll('.inbox-tab').forEach(button=>{
@@ -859,6 +867,15 @@ $('createTopicBtn').addEventListener('click',async()=>{
  message('topicMsg',id?'Topic changes saved.':'Your topic has been added.');
  await loadSections()
 });
+const literatureHeadings=["Introduction","Themes","Style and Literary Techniques","Difficult Vocabulary"];
+function isLiteratureArea(){return ['poetry','short-stories'].includes($('area').value)}
+function updateLiteratureEditor(){show('literaryTemplate',isLiteratureArea());show('generalVideoFields',!isLiteratureArea())}
+function literatureSections(){return literatureHeadings.map((title,i)=>({title,notes:$('litNotes'+i).value,video:$('litVideo'+i).value.trim()}))}
+function resetLiteratureSections(){literatureHeadings.forEach((_,i)=>{$('litNotes'+i).value='';$('litVideo'+i).value=''})}
+function readLiteratureContent(raw){try{const data=JSON.parse(raw);return data?.format==='open-page-literature-v1'&&Array.isArray(data.sections)?data:null}catch{return null}}
+$('area').addEventListener('change',updateLiteratureEditor);
+updateLiteratureEditor();
+
 async function saveLesson(status){
  const id=$('lessonId').value;const title=$('title').value.trim(),slug=safeSlug($('slug').value||title);
  if(!title||!slug){message('saveMsg','Please enter a lesson title.');return}
@@ -879,9 +896,13 @@ async function saveLesson(status){
  const lessonId=result.data.id;
  let lessonVideoValue;
  try{lessonVideoValue=collectLessonVideos()}catch(e){message('saveMsg',e.message);return}
+ const literature=isLiteratureArea();
+ const sections=literature?literatureSections():[];
+ if(sections.some(s=>s.video && !isHttpVideoUrl(s.video))){message('saveMsg','Section video links must begin with https://');return}
+ const privateLessonContent=literature?JSON.stringify({format:'open-page-literature-v1',reading:$('content').value,sections}):$('content').value;
  const {error:privateError}=await supabaseClient.from('lesson_private_content').upsert({
   lesson_id:lessonId,
-  lesson_content:$('content').value,
+  lesson_content:privateLessonContent,
   video_url:lessonVideoValue,
   updated_at:new Date().toISOString()
  },{onConflict:'lesson_id'});
@@ -901,7 +922,7 @@ $('uploadVideoBtn').addEventListener('click',async()=>{
  const {data,error}=await supabaseClient.storage.from('lesson-videos').upload(filePath,file,{contentType:file.type,upsert:false});
  if(error){message('videoUploadMsg','Upload failed: '+error.message);return}
  const {data:publicData}=supabaseClient.storage.from('lesson-videos').getPublicUrl(data.path);
- if($('video').value.trim())addExtraVideoField(publicData.publicUrl);else $('video').value=publicData.publicUrl;
+ if(isLiteratureArea()){$('litVideo'+$('litUploadTarget').value).value=publicData.publicUrl;}else if($('video').value.trim())addExtraVideoField(publicData.publicUrl);else $('video').value=publicData.publicUrl;
  message('videoUploadMsg','Video uploaded successfully and added to this lesson. Save or publish the lesson to keep it.');
 });
 $('saveChangesBtn').addEventListener('click',()=>saveLesson(null));$('saveDraftBtn').addEventListener('click',()=>saveLesson('draft'));$('publishBtn').addEventListener('click',()=>saveLesson('published'));
@@ -910,7 +931,7 @@ async function editLesson(id){
  const {data:privateRows,error:privateError}=await supabaseClient.rpc('get_lesson_private_content',{p_lesson_id:id});
  if(privateError){message('saveMsg','Could not load private learning material: '+privateError.message);return}
  const privateData=Array.isArray(privateRows)?privateRows[0]:privateRows;
- $('lessonId').value=data.id;$('lessonStatus').value=data.status||'draft';$('title').value=data.title;$('slug').value=data.slug;$('summary').value=data.summary||'';$('content').value=privateData?.lesson_content||'';setLessonVideos(privateData?.video_url||'');$('area').value=data.learning_areas.slug;$('level').value=data.levels.code;$('editorHeading').textContent='Edit lesson';show('extras');await loadExtras();$('editor').scrollIntoView({behavior:'smooth'})
+ $('lessonId').value=data.id;$('lessonStatus').value=data.status||'draft';$('title').value=data.title;$('slug').value=data.slug;$('summary').value=data.summary||'';$('content').value=privateData?.lesson_content||'';setLessonVideos(privateData?.video_url||'');$('area').value=data.learning_areas.slug;const literatureData=readLiteratureContent(privateData?.lesson_content||'');if(literatureData){$('content').value=literatureData.reading||'';literatureHeadings.forEach((_,i)=>{$('litNotes'+i).value=literatureData.sections[i]?.notes||'';$('litVideo'+i).value=literatureData.sections[i]?.video||''})}else{resetLiteratureSections()}updateLiteratureEditor();$('level').value=data.levels.code;$('editorHeading').textContent='Edit lesson';show('extras');await loadExtras();$('editor').scrollIntoView({behavior:'smooth'})
 }
 async function loadExtras(){
  const id=$('lessonId').value;if(!id)return;
