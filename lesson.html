@@ -299,6 +299,45 @@ async function load() {
       root.appendChild(el('p',lesson.summary,'meta'));
 
     const isHttpVideoUrl=value=>/^https?:\/\//i.test(value);
+    // Four-part literature lessons use a structured payload in the existing private content field.
+    let literatureData=null;
+    if(area?.slug==='poetry'||area?.slug==='short-stories'){
+      try{const parsed=JSON.parse(privateData?.lesson_content||'');
+        if(parsed?.format==='open-page-literature-v1'&&Array.isArray(parsed.sections))literatureData=parsed;
+      }catch(e){}
+    }
+    if(literatureData){
+      const titles=['Introduction','Themes','Style and Literary Techniques','Difficult Vocabulary'];
+      const container=panel('Explore this work');
+      container.id='literature-sections';
+      titles.forEach((title,i)=>{
+        const data=literatureData.sections[i]||{};
+        const details=document.createElement('details');
+        details.style.cssText='border:1px solid #e4dfd3;border-radius:6px;padding:14px;margin:12px 0;background:#fffdf8';
+        const summary=el('summary',(i+1)+'. '+title);
+        summary.style.cssText='cursor:pointer;font-weight:bold;color:var(--green);font-size:19px';
+        details.appendChild(summary);
+        if(data.notes){const notes=el('div',data.notes,'lesson-text');notes.style.marginTop='16px';details.appendChild(notes)}
+        if(data.video&&/^https?:\/\//i.test(data.video)){
+          const url=data.video.trim();
+          let embed=null;
+          try{const parsed=new URL(url),host=parsed.hostname.replace(/^www\./,'');
+            if(host==='youtu.be')embed='https://www.youtube-nocookie.com/embed/'+parsed.pathname.slice(1).split('/')[0];
+            if(['youtube.com','m.youtube.com','youtube-nocookie.com'].includes(host)){
+              const id=parsed.searchParams.get('v')||parsed.pathname.match(/\/(?:embed|shorts)\/([^/?]+)/)?.[1];
+              if(id)embed='https://www.youtube-nocookie.com/embed/'+id;
+            }
+            if(['vimeo.com','player.vimeo.com'].includes(host)){const id=parsed.pathname.match(/\/(?:video\/)?(\d+)/)?.[1];if(id)embed='https://player.vimeo.com/video/'+id}
+          }catch(e){}
+          if(embed){const frame=el('div','','video-frame');frame.style.marginTop='16px';const iframe=document.createElement('iframe');iframe.src=embed;iframe.title=title+' video';iframe.loading='lazy';iframe.allowFullscreen=true;iframe.allow='accelerometer; autoplay; encrypted-media; picture-in-picture';frame.appendChild(iframe);details.appendChild(frame)}
+          else if(/\.(mp4|webm|mov)(?:\?|$)/i.test(url)||url.includes('/storage/v1/object/')){const video=document.createElement('video');video.controls=true;video.preload='metadata';video.src=url;video.style.cssText='width:100%;margin-top:16px';details.appendChild(video)}
+          const link=el('a','Open section video','video-link');link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.style.marginTop='12px';details.appendChild(link);
+        }
+        if(!data.notes&&!data.video)details.appendChild(el('p','This section is being prepared.','meta'));
+        container.appendChild(details);
+      });
+      root.appendChild(container);
+    }
     // VIDEO LESSON
 
     if(privateData?.video_url) {
@@ -351,7 +390,7 @@ async function load() {
 
     // READING
 
-    if(privateData?.lesson_content) {
+    if(literatureData?.reading || (!literatureData && privateData?.lesson_content)) {
       const p = panel('Reading');
       p.classList.add('reading-panel');
       p.id='reading-section';
@@ -373,7 +412,7 @@ async function load() {
       readerTools.append(smaller,reset,larger,spacing,focus);
       focus.addEventListener('click',()=>{const active=document.body.classList.toggle('focus-reading');focus.setAttribute('aria-pressed',String(active));focus.textContent=active?'Exit focus mode':'Focus reading';if(active)window.scrollTo({top:0,behavior:'smooth'});});
 
-      const readingText = el('div',privateData.lesson_content,'lesson-text');
+      const readingText = el('div',literatureData?literatureData.reading:privateData.lesson_content,'lesson-text');
       let readingSize=18;
       function updateReadingSize(){readingText.style.fontSize=readingSize+'px';}
       smaller.addEventListener('click',()=>{readingSize=Math.max(15,readingSize-1);updateReadingSize()});
