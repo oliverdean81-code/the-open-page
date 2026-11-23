@@ -173,7 +173,7 @@ img,video,iframe{max-width:100%}
 <h2>English for International Relations Course Planner</h2><p class="muted">30 suggested lessons progressing from B1 to C1. Tick each lesson when completed. This checklist is saved in this browser only; it does not publish lessons.</p>
 <div class="actions"><label for="relationsLevel">Level</label><select id="relationsLevel"><option value="all">All levels</option><option>B1</option><option>B2</option><option>C1</option></select></div>
 <p id="relationsProgress" class="status"></p><div id="relationsChecklist"></div></div>
-<div class="panel workspace-panel" id="lessonManagementPanel" data-workspace-panel="teaching"><div class="actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 style="margin:0">Your lessons</h2><div class="actions"><a href="index.html" style="display:inline-block;text-decoration:none;border-radius:7px;padding:12px 18px;background:var(--green);color:white;font:600 14px Arial,sans-serif">View website</a><button id="signOutBtn" class="secondary">Sign out</button></div></div><p class="muted">Only lessons you publish will be visible to students.</p><div id="lessonList"></div><button id="newLessonBtn" class="gold">Create a new lesson</button></div>
+<div class="panel workspace-panel" id="lessonManagementPanel" data-workspace-panel="teaching"><div class="actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 style="margin:0">Your lessons</h2><div class="actions"><a href="index.html" style="display:inline-block;text-decoration:none;border-radius:7px;padding:12px 18px;background:var(--green);color:white;font:600 14px Arial,sans-serif">View website</a><button id="signOutBtn" class="secondary">Sign out</button></div></div><p class="muted">Only lessons you publish will be visible to students.</p><div id="lessonList"></div><details style="margin:20px 0"><summary><strong>Recycle Bin — deleted lessons</strong></summary><p class="muted">Restore a lesson with all its content, or permanently delete it. Automatic removal after 30 days is not enabled yet.</p><div id="recycleList"></div></details><button id="newLessonBtn" class="gold">Create a new lesson</button></div>
 
 <div class="panel workspace-panel hidden" id="studentWorkPanel" data-workspace-panel="feedback">
 <div class="actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 style="margin:0">Student Feedback Inbox</h2><a href="index.html" style="display:inline-block;text-decoration:none;border-radius:7px;padding:12px 18px;background:var(--green);color:white;font:600 14px Arial,sans-serif">View website</a></div>
@@ -684,9 +684,10 @@ async function moveCourseLesson(lesson,step,allLessons){
  await loadLessons();
 }
 async function loadLessons(){
- const {data,error}=await supabaseClient.from('lessons').select('id,title,status,area_id,level_id,sort_order,created_at,learning_areas(name,slug),levels(name,code)').order('created_at',{ascending:true});
+ const {data,error}=await supabaseClient.from('lessons').select('id,title,status,area_id,level_id,sort_order,created_at,deleted_at,learning_areas(name,slug),levels(name,code)').is('deleted_at',null).order('created_at',{ascending:true});
  if(error){$('lessonList').textContent='Could not load lessons: '+error.message;$('lessonProgressSummary').textContent='Could not load lesson counts: '+error.message;return}
  renderLessonProgress(data);
+ await loadRecycleBin();
  $('lessonList').replaceChildren();
  if(!data.length){$('lessonList').innerHTML='<p class="muted">No lessons yet. Create your first lesson below.</p>';return}
  const ordered=orderedCourseLessons(data);
@@ -720,34 +721,46 @@ async function loadLessons(){
 
 
 async function deleteLesson(id,title){
- if(!confirm('Do you really want to delete this lesson?\n\n“'+title+'” and its associated vocabulary, activities, and saved lesson content will be permanently deleted. This cannot be undone.'))return;
- const showDeleteError=(detail)=>{
-  const text='Deletion was not completed for “'+title+'”. '+detail;
-  message('saveMsg',text);
-  alert(text);
- };
- message('saveMsg','Deleting lesson and its associated learning materials…');
- try{
-  const relatedTables=['vocabulary','activities','lesson_private_content'];
-  for(const table of relatedTables){
-   const {error}=await supabaseClient.from(table).delete().eq('lesson_id',id);
-   if(error){showDeleteError('Supabase could not delete related '+table+' records: '+error.message);return}
-  }
-  const {data:deleted,error}=await supabaseClient.from('lessons').delete().eq('id',id).select('id');
-  if(error){showDeleteError('Supabase reported: '+error.message);return}
-  if(!deleted||deleted.length===0){
-   showDeleteError('Supabase did not delete the lesson. Your account may not have permission under the database deletion policy. No other lessons were selected for deletion.');
-   return;
-  }
-  const {data:remaining,error:checkError}=await supabaseClient.from('lessons').select('id').eq('id',id).maybeSingle();
-  if(checkError){showDeleteError('The deletion request was sent, but verification failed: '+checkError.message);await loadLessons();return}
-  if(remaining){showDeleteError('The lesson is still in the database after deletion. Please check Supabase permissions.');await loadLessons();return}
-  if($('lessonId').value===id)resetEditor();
-  message('saveMsg','Lesson “'+title+'” was deleted successfully.');
-  await loadLessons();
- }catch(e){showDeleteError('Unexpected error: '+(e?.message||String(e)))}
+ if(!confirm('Move “'+title+'” to the Recycle Bin? You can restore it later.'))return;
+ const {data,error}=await supabaseClient.from('lessons').update({deleted_at:new Date().toISOString()}).eq('id',id).is('deleted_at',null).select('id');
+ if(error||!data?.length){alert('Could not move lesson to Recycle Bin: '+(error?.message||'Update was not permitted'));return}
+ if(String($('lessonId').value)===String(id))resetEditor();
+ message('saveMsg','“'+title+'” moved to the Recycle Bin.');
+ await loadLessons();
 }
-
+async function loadRecycleBin(){
+ const list=$('recycleList');if(!list)return;
+ const {data,error}=await supabaseClient.from('lessons').select('id,title,deleted_at').not('deleted_at','is',null).order('deleted_at',{ascending:false});
+ list.replaceChildren();
+ if(error){list.textContent='Could not load Recycle Bin: '+error.message;return}
+ if(!data?.length){list.textContent='The Recycle Bin is empty.';return}
+ data.forEach(lesson=>{
+  const row=document.createElement('div');row.className='lesson';
+  const title=document.createElement('strong');title.textContent=lesson.title;
+  const date=document.createElement('small');date.textContent='Moved '+new Date(lesson.deleted_at).toLocaleDateString();
+  const restore=document.createElement('button');restore.type='button';restore.className='secondary';restore.textContent='Restore lesson';
+  restore.addEventListener('click',async()=>{
+   const {data:restored,error}=await supabaseClient.from('lessons').update({deleted_at:null}).eq('id',lesson.id).select('id');
+   if(error||!restored?.length){alert('Restore failed: '+(error?.message||'Not permitted'));return}
+   await loadLessons();
+  });
+  const permanent=document.createElement('button');permanent.type='button';permanent.className='danger';permanent.textContent='Delete permanently';
+  permanent.addEventListener('click',()=>permanentlyDeleteLesson(lesson.id,lesson.title));
+  const actions=document.createElement('div');actions.className='lesson-actions';actions.append(restore,permanent);
+  row.append(title,date,actions);list.append(row);
+ });
+}
+async function permanentlyDeleteLesson(id,title){
+ if(!confirm('Permanently delete “'+title+'” and its associated content? This CANNOT be undone.'))return;
+ if(!confirm('Final confirmation: permanently delete “'+title+'”?'))return;
+ for(const table of ['vocabulary','activities','lesson_private_content']){
+  const {error}=await supabaseClient.from(table).delete().eq('lesson_id',id);
+  if(error){alert('Deletion stopped: '+table+': '+error.message);return}
+ }
+ const {data,error}=await supabaseClient.from('lessons').delete().eq('id',id).not('deleted_at','is',null).select('id');
+ if(error||!data?.length){alert('Permanent deletion failed: '+(error?.message||'Not permitted'));return}
+ await loadLessons();
+}
 async function setupSpecialistCourse(course){
  const status=$('specialistCourseMsg');
  const definitions={
