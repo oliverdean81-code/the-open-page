@@ -423,7 +423,7 @@ $('loginBtn').addEventListener('click',async()=>{
  if(error){message('loginMsg','Sign-in failed: '+error.message);return}currentUser=data.user;await enterDashboard()
 });
 function setTeacherWorkspace(name){
- const allowed=['teaching','feedback','tracker','planner','library'];
+ const allowed=['teaching','feedback','tracker','planner','library','literature'];
  if(!allowed.includes(name))name='teaching';
  document.querySelectorAll('[data-workspace-panel]').forEach(panel=>{
   const active=panel.dataset.workspacePanel===name;
