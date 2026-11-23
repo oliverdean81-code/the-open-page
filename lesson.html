@@ -298,6 +298,7 @@ async function load() {
     if(lesson.summary)
       root.appendChild(el('p',lesson.summary,'meta'));
 
+    const isHttpVideoUrl=value=>/^https?:\/\//i.test(value);
     // VIDEO LESSON
 
     if(privateData?.video_url) {
@@ -306,7 +307,7 @@ async function load() {
       if(stored.startsWith('[')){
         try{const parsed=JSON.parse(stored);if(Array.isArray(parsed))lessonVideos=parsed.filter(v=>typeof v==='string')}catch(e){}
       }else lessonVideos=[stored];
-      lessonVideos=lessonVideos.filter(v=>/^https?:\\/\\//i.test(v.trim()));
+      lessonVideos=lessonVideos.filter(v=>isHttpVideoUrl(v.trim()));
       if(lessonVideos.length){
       const p = panel(lessonVideos.length>1?'Lesson videos':'Video lesson');
       lessonVideos.forEach((videoUrl,index)=>{
