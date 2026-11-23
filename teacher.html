@@ -720,18 +720,32 @@ async function loadLessons(){
 
 
 async function deleteLesson(id,title){
- if(!confirm('Do you really want to delete this lesson?\\n\\n“'+title+'” and its associated vocabulary, activities, and saved lesson content will be permanently deleted. This cannot be undone.'))return;
+ if(!confirm('Do you really want to delete this lesson?\n\n“'+title+'” and its associated vocabulary, activities, and saved lesson content will be permanently deleted. This cannot be undone.'))return;
+ const showDeleteError=(detail)=>{
+  const text='Deletion was not completed for “'+title+'”. '+detail;
+  message('saveMsg',text);
+  alert(text);
+ };
  message('saveMsg','Deleting lesson and its associated learning materials…');
- const relatedTables=['vocabulary','activities','lesson_private_content'];
- for(const table of relatedTables){
-  const {error}=await supabaseClient.from(table).delete().eq('lesson_id',id);
-  if(error){message('saveMsg','Could not finish deleting the lesson. The '+table+' records could not be removed: '+error.message+' Please refresh the lesson list and try again.');return}
- }
- const {error}=await supabaseClient.from('lessons').delete().eq('id',id);
- if(error){message('saveMsg','The lesson itself could not be deleted: '+error.message+' Please refresh the lesson list and try again.');return}
- if($('lessonId').value===id)resetEditor();
- message('saveMsg','Lesson “'+title+'” and its associated learning materials have been deleted.');
- await loadLessons();
+ try{
+  const relatedTables=['vocabulary','activities','lesson_private_content'];
+  for(const table of relatedTables){
+   const {error}=await supabaseClient.from(table).delete().eq('lesson_id',id);
+   if(error){showDeleteError('Supabase could not delete related '+table+' records: '+error.message);return}
+  }
+  const {data:deleted,error}=await supabaseClient.from('lessons').delete().eq('id',id).select('id');
+  if(error){showDeleteError('Supabase reported: '+error.message);return}
+  if(!deleted||deleted.length===0){
+   showDeleteError('Supabase did not delete the lesson. Your account may not have permission under the database deletion policy. No other lessons were selected for deletion.');
+   return;
+  }
+  const {data:remaining,error:checkError}=await supabaseClient.from('lessons').select('id').eq('id',id).maybeSingle();
+  if(checkError){showDeleteError('The deletion request was sent, but verification failed: '+checkError.message);await loadLessons();return}
+  if(remaining){showDeleteError('The lesson is still in the database after deletion. Please check Supabase permissions.');await loadLessons();return}
+  if($('lessonId').value===id)resetEditor();
+  message('saveMsg','Lesson “'+title+'” was deleted successfully.');
+  await loadLessons();
+ }catch(e){showDeleteError('Unexpected error: '+(e?.message||String(e)))}
 }
 
 async function setupSpecialistCourse(course){
