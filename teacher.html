@@ -100,6 +100,8 @@ img,video,iframe{max-width:100%}
   <button type="button" class="workspace-tab secondary" data-workspace="planner" aria-selected="false">Weekly Work Planner</button>
   <button type="button" class="workspace-tab secondary" data-workspace="library" aria-selected="false">Content Library</button>
   <button type="button" class="workspace-tab secondary" data-workspace="literature" aria-selected="false">Literature Course Planner</button>
+  <button type="button" class="workspace-tab secondary" data-workspace="academic" aria-selected="false">Academic English Planner</button>
+  <button type="button" class="workspace-tab secondary" data-workspace="business" aria-selected="false">Business English Planner</button>
  </div>
 </div>
 <div class="panel workspace-panel" id="weeklyWorkPlanner" data-workspace-panel="planner">
@@ -124,6 +126,18 @@ img,video,iframe{max-width:100%}
 <p class="muted">Suggested levels are flexible. Check copyright and publication permissions before reproducing texts or recordings. The Barry Crump entry is an extract rather than a standalone short story.</p>
 </div>
 
+<div class="panel workspace-panel hidden" id="academicCoursePlanner" data-workspace-panel="academic">
+<h2>Academic English Course Planner</h2>
+<p class="muted">30 suggested lessons from B1 to C1. Tick completed lessons to track your content development. Saved in this browser only; no lessons are published or edited by this checklist.</p>
+<div class="actions"><label for="academicLevel">Level</label><select id="academicLevel"><option value="all">All levels</option><option>B1</option><option>B2</option><option>C1</option></select></div>
+<p id="academicProgress" class="status"></p><div id="academicChecklist"></div>
+</div>
+<div class="panel workspace-panel hidden" id="businessCoursePlanner" data-workspace-panel="business">
+<h2>Business English Course Planner</h2>
+<p class="muted">30 suggested lessons from B1 to C1. Tick completed lessons to track your content development. Saved in this browser only; no lessons are published or edited by this checklist.</p>
+<div class="actions"><label for="businessLevel">Level</label><select id="businessLevel"><option value="all">All levels</option><option>B1</option><option>B2</option><option>C1</option></select></div>
+<p id="businessProgress" class="status"></p><div id="businessChecklist"></div>
+</div>
 <div class="panel workspace-panel" id="lessonManagementPanel" data-workspace-panel="teaching"><div class="actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 style="margin:0">Your lessons</h2><div class="actions"><a href="index.html" style="display:inline-block;text-decoration:none;border-radius:7px;padding:12px 18px;background:var(--green);color:white;font:600 14px Arial,sans-serif">View website</a><button id="signOutBtn" class="secondary">Sign out</button></div></div><p class="muted">Only lessons you publish will be visible to students.</p><div id="lessonList"></div><button id="newLessonBtn" class="gold">Create a new lesson</button></div>
 
 <div class="panel workspace-panel hidden" id="studentWorkPanel" data-workspace-panel="feedback">
@@ -280,6 +294,32 @@ function renderLiteraturePlanner(){
 document.getElementById('literatureType').addEventListener('change',renderLiteraturePlanner);
 document.getElementById('literatureLevel').addEventListener('change',renderLiteraturePlanner);
 renderLiteraturePlanner();
+const coursePlannerTopics={"academic":["Understanding academic course instructions","Academic vocabulary: common university words","Reading a short academic text","Identifying main ideas and supporting details","Note-taking from short lectures","Summarising a paragraph in your own words","Understanding graphs and tables","Writing clear academic paragraphs","Using linking words and signposting","Writing a short academic summary","Distinguishing facts, opinions and claims","Finding reliable academic sources","Paraphrasing without changing meaning","Referencing and avoiding plagiarism","Developing a thesis statement","Structuring an academic essay","Comparing and contrasting research findings","Writing introductions and conclusions","Describing data and trends","Delivering a short academic presentation","Critically evaluating evidence","Understanding research methods","Synthesising multiple sources","Writing an argumentative essay","Developing a literature review","Discussing limitations and uncertainty","Academic hedging and cautious claims","Presenting and defending a research argument","Writing an abstract and research proposal","Independent critical research project"],"business":["Introducing yourself professionally","Describing jobs and workplace responsibilities","Everyday workplace vocabulary","Writing a polite workplace email","Making and responding to requests","Scheduling meetings and appointments","Making telephone and video calls","Participating in simple meetings","Explaining products and services","Writing a short workplace update","Making professional small talk","Writing clear reports and summaries","Giving an effective presentation","Describing business trends and figures","Handling customer complaints","Negotiating deadlines and priorities","Expressing agreement and disagreement diplomatically","Writing proposals and recommendations","Participating in interviews","Managing cross-cultural communication","Leading strategic meetings","Negotiating complex agreements","Persuasive business writing","Analysing financial and performance reports","Presenting business cases to stakeholders","Managing conflict and difficult conversations","Communicating organisational change","Evaluating business risks and opportunities","Leadership communication and feedback","Final project: strategic proposal and presentation"]};
+function renderCoursePlanner(course){
+ const topics=coursePlannerTopics[course],key='openpage-'+course+'-planner-v1';
+ const level=document.getElementById(course+'Level').value;
+ let done=[];try{const saved=JSON.parse(localStorage.getItem(key)||'[]');if(Array.isArray(saved))done=saved}catch(e){}
+ const visible=topics.map((title,index)=>({title,index,level:index<10?'B1':index<20?'B2':'C1'})).filter(item=>level==='all'||item.level===level);
+ const progress=document.getElementById(course+'Progress');
+ progress.textContent=visible.filter(item=>done.includes(item.index)).length+' of '+visible.length+' selected lessons completed · '+done.length+' of 30 overall';
+ const root=document.getElementById(course+'Checklist');root.replaceChildren();
+ let lastLevel='';
+ visible.forEach(item=>{
+  if(item.level!==lastLevel){const heading=document.createElement('h3');heading.textContent=item.level+' — '+(item.level==='B1'?'Foundation':item.level==='B2'?'Developing skills':'Advanced');root.appendChild(heading);lastLevel=item.level}
+  const row=document.createElement('label');row.style.cssText='display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer';
+  const input=document.createElement('input');input.type='checkbox';input.checked=done.includes(item.index);input.style.cssText='width:19px;height:19px;flex-shrink:0;margin-top:3px';
+  const title=document.createElement('span');title.textContent=(item.index+1)+'. '+item.title;if(input.checked)title.style.textDecoration='line-through';
+  input.addEventListener('change',()=>{
+   const next=done.filter(i=>i!==item.index);if(input.checked)next.push(item.index);
+   try{localStorage.setItem(key,JSON.stringify(next));renderCoursePlanner(course)}catch(e){progress.textContent='Could not save checklist in this browser.'}
+  });
+  row.append(input,title);root.appendChild(row);
+ });
+}
+['academic','business'].forEach(course=>{
+ document.getElementById(course+'Level').addEventListener('change',()=>renderCoursePlanner(course));
+ renderCoursePlanner(course);
+});
 function organiseOptionalLessonFields(){
  const editor=document.getElementById('editor');
  if(!editor||document.getElementById('optionalLessonSettings'))return;
@@ -423,7 +463,7 @@ $('loginBtn').addEventListener('click',async()=>{
  if(error){message('loginMsg','Sign-in failed: '+error.message);return}currentUser=data.user;await enterDashboard()
 });
 function setTeacherWorkspace(name){
- const allowed=['teaching','feedback','tracker','planner','library','literature'];
+ const allowed=['teaching','feedback','tracker','planner','library','literature','academic','business'];
  if(!allowed.includes(name))name='teaching';
  document.querySelectorAll('[data-workspace-panel]').forEach(panel=>{
   const active=panel.dataset.workspacePanel===name;
