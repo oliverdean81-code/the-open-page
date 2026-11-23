@@ -124,6 +124,16 @@ footer {
   padding:28px;
   margin-top:40px;
 }
+
+/* Comfortable reading controls */
+.reader-tools{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin:0 0 18px;padding:12px;background:#f7f4ec;border:1px solid #e4dfd3;border-radius:6px}
+.reader-tools span{font:600 13px Arial,sans-serif;color:var(--green);margin-right:4px}
+.reader-tools button{min-width:42px;min-height:42px;padding:9px 13px;background:white;color:var(--green);border:1px solid #cfc5af;border-radius:4px;font:600 15px Arial,sans-serif;cursor:pointer}
+.reader-tools button:focus-visible{outline:3px solid #8a7045;outline-offset:2px}
+.reader-tools button[aria-pressed="true"]{background:var(--green);color:white}
+.lesson-text{font-size:18px;line-height:1.85;max-width:72ch;overflow-wrap:anywhere}
+.lesson-text.relaxed{line-height:2.05}
+@media(max-width:700px){header{padding:18px 16px;flex-direction:column;text-align:center}nav{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}nav a{margin:0;padding:7px 9px}main{padding:28px 14px}.panel{padding:18px;margin:18px 0}.lesson-text{font-size:18px;line-height:1.8}.reader-tools{gap:7px}.reader-tools button{flex:1 1 auto}}
 </style>
 </head>
 
@@ -296,12 +306,30 @@ async function load() {
     if(privateData?.lesson_content) {
       const p = panel('Reading');
 
-      p.appendChild(el(
-        'div',
-        privateData.lesson_content,
-        'lesson-text'
-      ));
+      const readerTools = el('div','','reader-tools');
+      readerTools.setAttribute('aria-label','Reading display settings');
+      const toolsLabel = el('span','Reading settings');
+      readerTools.appendChild(toolsLabel);
+      const smaller = el('button','A−');
+      smaller.type='button'; smaller.setAttribute('aria-label','Decrease reading text size');
+      const reset = el('button','Reset');
+      reset.type='button'; reset.setAttribute('aria-label','Reset reading text size');
+      const larger = el('button','A+');
+      larger.type='button'; larger.setAttribute('aria-label','Increase reading text size');
+      const spacing = el('button','Relaxed spacing');
+      spacing.type='button'; spacing.setAttribute('aria-pressed','false');
+      readerTools.append(smaller,reset,larger,spacing);
 
+      const readingText = el('div',privateData.lesson_content,'lesson-text');
+      let readingSize=18;
+      function updateReadingSize(){readingText.style.fontSize=readingSize+'px';}
+      smaller.addEventListener('click',()=>{readingSize=Math.max(15,readingSize-1);updateReadingSize()});
+      larger.addEventListener('click',()=>{readingSize=Math.min(26,readingSize+1);updateReadingSize()});
+      reset.addEventListener('click',()=>{readingSize=18;updateReadingSize();readingText.classList.remove('relaxed');spacing.setAttribute('aria-pressed','false');spacing.textContent='Relaxed spacing'});
+      spacing.addEventListener('click',()=>{const active=readingText.classList.toggle('relaxed');spacing.setAttribute('aria-pressed',String(active));spacing.textContent=active?'Standard spacing':'Relaxed spacing'});
+
+      p.appendChild(readerTools);
+      p.appendChild(readingText);
       root.appendChild(p);
     }
 
