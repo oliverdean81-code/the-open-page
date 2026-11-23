@@ -220,6 +220,8 @@ img,video,iframe{max-width:100%}
 <label for="slug">Lesson web address name (use lowercase words and hyphens)</label><input id="slug" placeholder="e.g. exploring-a-short-story">
 <label for="summary">Short introduction / lesson summary</label><textarea id="summary" placeholder="What will students learn in this lesson?"></textarea>
 <label for="content">Reading text and lesson content</label><textarea id="content" style="min-height:230px" placeholder="Paste your article, short story, poem, transcript, or lesson notes here."></textarea>
+<div class="actions" style="margin-top:8px"><button type="button" id="selectVocabBtn" class="secondary">Add highlighted word to vocabulary</button></div>
+<p id="selectVocabMsg" class="muted" style="margin:6px 0 12px">Highlight a word or phrase in the reading text, then click the button. Add its definition below.</p>
 <label for="video">Video lesson link (optional)</label><input id="video" type="url" placeholder="https://...">
 <label for="videoFile">Or upload a video from your computer (MP4, WebM or MOV; maximum 50 MB)</label>
 <input id="videoFile" type="file" accept="video/mp4,video/webm,video/quicktime">
@@ -275,6 +277,34 @@ function setupExtrasToggle(){
  });
 }
 let supabaseClient=null, currentUser=null, editingVocabularyId=null, editingActivityId=null;
+let highlightedVocabulary='';
+document.getElementById('content').addEventListener('select',()=>{
+ const field=document.getElementById('content');
+ const selected=field.value.slice(field.selectionStart,field.selectionEnd).trim();
+ if(selected)highlightedVocabulary=selected;
+});
+document.getElementById('selectVocabBtn').addEventListener('click',()=>{
+ const field=document.getElementById('content');
+ const direct=field.value.slice(field.selectionStart,field.selectionEnd).trim();
+ const selected=direct||highlightedVocabulary;
+ if(!selected){document.getElementById('selectVocabMsg').textContent='First highlight a word or phrase in the reading text.';return}
+ if(selected.length>150){document.getElementById('selectVocabMsg').textContent='Please highlight a shorter word or phrase (up to 150 characters).';return}
+ document.getElementById('word').value=selected.charAt(0).toUpperCase()+selected.slice(1);
+ document.getElementById('definition').value='';
+ document.getElementById('example').value='';
+ editingVocabularyId=null;
+ document.getElementById('addWordBtn').textContent='Add vocabulary';
+ document.getElementById('cancelWordEditBtn').classList.add('hidden');
+ const extras=document.getElementById('extras');
+ extras.classList.remove('hidden');extras.hidden=false;
+ const toggle=document.getElementById('extrasToggle');
+ if(toggle){toggle.querySelector('span:last-child').textContent='−'}
+ document.getElementById('selectVocabMsg').textContent='“'+selected+'” is ready below. Enter a definition, then save the vocabulary.';
+ document.getElementById('definition').scrollIntoView({behavior:'smooth',block:'center'});
+ document.getElementById('definition').focus();
+ highlightedVocabulary='';
+});
+
 const $=id=>document.getElementById(id);
 function message(id,text){$(id).textContent=text}
 function show(id,on=true){$(id).classList.toggle('hidden',!on)}
