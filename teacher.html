@@ -257,6 +257,13 @@ function organiseOptionalLessonFields(){
  };
  moveWithLabel('slug');
  moveWithLabel('video');
+ const additional=document.createElement('div');
+ additional.id='additionalVideos';
+ body.appendChild(additional);
+ const addVideo=document.createElement('button');
+ addVideo.type='button';addVideo.className='secondary';addVideo.textContent='+ Add another video';
+ addVideo.addEventListener('click',()=>addExtraVideoField(''));
+ const addRow=document.createElement('div');addRow.className='actions';addRow.appendChild(addVideo);body.appendChild(addRow);
  moveWithLabel('videoFile');
  const upload=document.getElementById('uploadVideoBtn');
  if(upload&&upload.parentElement)body.appendChild(upload.parentElement);
@@ -275,6 +282,34 @@ function setupExtrasToggle(){
   extras.hidden=!extras.hidden;
   button.querySelector('span:last-child').textContent=extras.hidden?'+':'−';
  });
+}
+function parseLessonVideos(value){
+ if(!value)return [];
+ const raw=String(value).trim();
+ if(raw.startsWith('[')){
+  try{const arr=JSON.parse(raw);if(Array.isArray(arr))return arr.filter(v=>typeof v==='string'&&/^https?:\\/\\//i.test(v.trim())).map(v=>v.trim())}catch(e){}
+ }
+ return /^https?:\\/\\//i.test(raw)?[raw]:[];
+}
+function addExtraVideoField(value){
+ const container=$('additionalVideos');
+ if(!container)return;
+ const row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap';
+ const input=document.createElement('input');input.type='url';input.placeholder='Additional video link (https://...)';input.value=value||'';input.className='additional-video-url';input.style.cssText='flex:1;min-width:220px';
+ const remove=document.createElement('button');remove.type='button';remove.className='secondary';remove.textContent='Remove';
+ remove.addEventListener('click',()=>row.remove());
+ row.append(input,remove);container.appendChild(row);return input;
+}
+function setLessonVideos(value){
+ const videos=parseLessonVideos(value);
+ $('video').value=videos[0]||'';
+ $('additionalVideos').replaceChildren();
+ videos.slice(1).forEach(url=>addExtraVideoField(url));
+}
+function collectLessonVideos(){
+ const videos=[$('video').value,...document.querySelectorAll('.additional-video-url')].map(v=>typeof v==='string'?v.trim():v.value.trim()).filter(Boolean);
+ if(videos.some(v=>!/^https?:\\/\\//i.test(v)))throw new Error('Please enter valid video links beginning with https://');
+ return videos.length>1?JSON.stringify(videos):(videos[0]||null);
 }
 let supabaseClient=null, currentUser=null, editingVocabularyId=null, editingActivityId=null;
 let highlightedVocabulary='';
@@ -369,7 +404,7 @@ async function enterDashboard(){
 $('signOutBtn').addEventListener('click',async()=>{await supabaseClient.auth.signOut();currentUser=null;show('dashboard',false);show('loginPanel')});
 $('newLessonBtn').addEventListener('click',()=>{resetEditor();$('editor').scrollIntoView({behavior:'smooth'})});
 $('cancelBtn').addEventListener('click',resetEditor);
-function resetEditor(){editingVocabularyId=null;editingActivityId=null;$('addWordBtn').textContent='Add vocabulary';$('addActivityBtn').textContent='Add activity';show('cancelWordEditBtn',false);show('cancelActivityEditBtn',false);['lessonId','title','slug','summary','content','video','word','definition','example','prompt','answer'].forEach(id=>$(id).value='');$('lessonStatus').value='draft';$('videoFile').value='';message('videoUploadMsg','Choose a video file, then click Upload video. The uploaded video link will be added to the lesson automatically.');$('area').value='news';$('level').value='B1';$('editorHeading').textContent='Create a lesson';show('extras',false);message('saveMsg','Create a lesson first. You can then add its vocabulary and activities.')}
+function resetEditor(){editingVocabularyId=null;editingActivityId=null;$('addWordBtn').textContent='Add vocabulary';$('addActivityBtn').textContent='Add activity';show('cancelWordEditBtn',false);show('cancelActivityEditBtn',false);['lessonId','title','slug','summary','content','video','word','definition','example','prompt','answer'].forEach(id=>$(id).value='');$('lessonStatus').value='draft';$('additionalVideos').replaceChildren();$('videoFile').value='';message('videoUploadMsg','Choose a video file, then click Upload video. The uploaded video link will be added to the lesson automatically.');$('area').value='news';$('level').value='B1';$('editorHeading').textContent='Create a lesson';show('extras',false);message('saveMsg','Create a lesson first. You can then add its vocabulary and activities.')}
 $('title').addEventListener('input',()=>{if(!$('lessonId').value)$('slug').value=safeSlug($('title').value)});
 let studentInboxTab='new';
 document.querySelectorAll('.inbox-tab').forEach(button=>{
@@ -662,10 +697,12 @@ async function saveLesson(status){
  let result=id?await supabaseClient.from('lessons').update(record).eq('id',id).select('id').single():await supabaseClient.from('lessons').insert(record).select('id').single();
  if(result.error){message('saveMsg','Could not save lesson details: '+result.error.message);return}
  const lessonId=result.data.id;
+ let lessonVideoValue;
+ try{lessonVideoValue=collectLessonVideos()}catch(e){message('saveMsg',e.message);return}
  const {error:privateError}=await supabaseClient.from('lesson_private_content').upsert({
   lesson_id:lessonId,
   lesson_content:$('content').value,
-  video_url:$('video').value.trim()||null,
+  video_url:lessonVideoValue,
   updated_at:new Date().toISOString()
  },{onConflict:'lesson_id'});
  if(privateError){message('saveMsg','The lesson details were saved, but the private learning material could not be saved: '+privateError.message);return}
@@ -684,8 +721,8 @@ $('uploadVideoBtn').addEventListener('click',async()=>{
  const {data,error}=await supabaseClient.storage.from('lesson-videos').upload(filePath,file,{contentType:file.type,upsert:false});
  if(error){message('videoUploadMsg','Upload failed: '+error.message);return}
  const {data:publicData}=supabaseClient.storage.from('lesson-videos').getPublicUrl(data.path);
- $('video').value=publicData.publicUrl;
- message('videoUploadMsg','Video uploaded successfully. Its link has been added to the Video lesson link field. Save or publish your lesson to keep the link.');
+ if($('video').value.trim())addExtraVideoField(publicData.publicUrl);else $('video').value=publicData.publicUrl;
+ message('videoUploadMsg','Video uploaded successfully and added to this lesson. Save or publish the lesson to keep it.');
 });
 $('saveChangesBtn').addEventListener('click',()=>saveLesson(null));$('saveDraftBtn').addEventListener('click',()=>saveLesson('draft'));$('publishBtn').addEventListener('click',()=>saveLesson('published'));
 async function editLesson(id){
@@ -693,7 +730,7 @@ async function editLesson(id){
  const {data:privateRows,error:privateError}=await supabaseClient.rpc('get_lesson_private_content',{p_lesson_id:id});
  if(privateError){message('saveMsg','Could not load private learning material: '+privateError.message);return}
  const privateData=Array.isArray(privateRows)?privateRows[0]:privateRows;
- $('lessonId').value=data.id;$('lessonStatus').value=data.status||'draft';$('title').value=data.title;$('slug').value=data.slug;$('summary').value=data.summary||'';$('content').value=privateData?.lesson_content||'';$('video').value=privateData?.video_url||'';$('area').value=data.learning_areas.slug;$('level').value=data.levels.code;$('editorHeading').textContent='Edit lesson';show('extras');await loadExtras();$('editor').scrollIntoView({behavior:'smooth'})
+ $('lessonId').value=data.id;$('lessonStatus').value=data.status||'draft';$('title').value=data.title;$('slug').value=data.slug;$('summary').value=data.summary||'';$('content').value=privateData?.lesson_content||'';setLessonVideos(privateData?.video_url||'');$('area').value=data.learning_areas.slug;$('level').value=data.levels.code;$('editorHeading').textContent='Edit lesson';show('extras');await loadExtras();$('editor').scrollIntoView({behavior:'smooth'})
 }
 async function loadExtras(){
  const id=$('lessonId').value;if(!id)return;
