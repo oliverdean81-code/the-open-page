@@ -99,6 +99,7 @@ img,video,iframe{max-width:100%}
   <button type="button" class="workspace-tab secondary" data-workspace="tracker" aria-selected="false">Content Production Tracker</button>
   <button type="button" class="workspace-tab secondary" data-workspace="planner" aria-selected="false">Weekly Work Planner</button>
   <button type="button" class="workspace-tab secondary" data-workspace="library" aria-selected="false">Content Library</button>
+  <button type="button" class="workspace-tab secondary" data-workspace="literature" aria-selected="false">Literature Course Planner</button>
  </div>
 </div>
 <div class="panel workspace-panel" id="weeklyWorkPlanner" data-workspace-panel="planner">
@@ -114,6 +115,14 @@ img,video,iframe{max-width:100%}
 <label for="libraryNotes">Draft, notes or useful details</label><textarea id="libraryNotes" placeholder="Paste your material or notes here…" style="min-height:140px"></textarea>
 <div class="actions"><button type="button" class="gold" id="saveLibraryItem">Save to library</button><button type="button" class="secondary" id="exportLibrary">Download library backup</button><label class="secondary" style="display:inline-flex;align-items:center;padding:10px 14px;border-radius:7px;cursor:pointer">Restore library backup<input id="importLibrary" type="file" accept="application/json" style="display:none"></label></div>
 <div id="libraryMessage" class="status">Your library is private to this browser. Download backups regularly.</div><h3>Saved materials</h3><div id="libraryList"><p class="muted">Your saved materials will appear here.</p></div></div>
+
+<div class="panel workspace-panel hidden" id="literatureCoursePlanner" data-workspace-panel="literature">
+<h2>Literature Course Planner</h2>
+<p class="muted">Your suggested 60-work teaching roadmap. Tick a work when its lesson is complete. This checklist is saved in this browser on this computer; it does not publish lessons or sync between devices.</p>
+<div class="actions"><label for="literatureType">Course</label><select id="literatureType"><option value="all">Both courses</option><option value="poetry">Poetry</option><option value="stories">Short Stories</option></select><label for="literatureLevel">Level</label><select id="literatureLevel"><option value="all">All levels</option><option>B1</option><option>B2</option><option>C1</option></select></div>
+<p id="literatureProgress" class="status"></p><div id="literatureChecklist"></div>
+<p class="muted">Suggested levels are flexible. Check copyright and publication permissions before reproducing texts or recordings. The Barry Crump entry is an extract rather than a standalone short story.</p>
+</div>
 
 <div class="panel workspace-panel" id="lessonManagementPanel" data-workspace-panel="teaching"><div class="actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap"><h2 style="margin:0">Your lessons</h2><div class="actions"><a href="index.html" style="display:inline-block;text-decoration:none;border-radius:7px;padding:12px 18px;background:var(--green);color:white;font:600 14px Arial,sans-serif">View website</a><button id="signOutBtn" class="secondary">Sign out</button></div></div><p class="muted">Only lessons you publish will be visible to students.</p><div id="lessonList"></div><button id="newLessonBtn" class="gold">Create a new lesson</button></div>
 
@@ -237,6 +246,40 @@ img,video,iframe{max-width:100%}
 </section>
 </main>
 <script>
+const literatureWorks=[["poetry",1,"B1","William Wordsworth","I Wandered Lonely as a Cloud"],["poetry",2,"B1","Robert Louis Stevenson","The Swing"],["poetry",3,"B1","Langston Hughes","Dreams"],["poetry",4,"B1","Robert Frost","The Pasture"],["poetry",5,"B1","Emily Dickinson","Hope is the Thing with Feathers"],["poetry",6,"B1","Robert Burns","A Red, Red Rose"],["poetry",7,"B1","A. B. Paterson","The Man from Snowy River"],["poetry",8,"B2","Henry Lawson","Faces in the Street"],["poetry",9,"B2","Denis Glover","The Magpies"],["poetry",10,"B2","William Wordsworth","The World Is Too Much with Us"],["poetry",11,"B2","Maya Angelou","Still I Rise"],["poetry",12,"B2","Banjo Paterson","Clancy of the Overflow"],["poetry",13,"B2","Claude McKay","If We Must Die"],["poetry",14,"B2","Robert Frost","The Road Not Taken"],["poetry",15,"B2","John Keats","Bright Star"],["poetry",16,"B2","Hone Tuwhare","Rain"],["poetry",17,"B2","Oodgeroo Noonuccal","We Are Going"],["poetry",18,"B2","Judith Wright","South of My Days"],["poetry",19,"B2","James K. Baxter","High Country Weather"],["poetry",20,"C1","William Wordsworth","Scorn Not the Sonnet"],["poetry",21,"C1","W. B. Yeats","The Second Coming"],["poetry",22,"C1","Wilfred Owen","Dulce et Decorum Est"],["poetry",23,"C1","Derek Walcott","A Far Cry from Africa"],["poetry",24,"C1","Wole Soyinka","Telephone Conversation"],["poetry",25,"C1","A. K. Ramanujan","A River"],["poetry",26,"C1","Sylvia Plath","Daddy"],["poetry",27,"C1","T. S. Eliot","The Love Song of J. Alfred Prufrock"],["poetry",28,"C1","Allen Curnow","House and Land"],["poetry",29,"C1","David Malouf","Wild Lemons"],["poetry",30,"C1","Selina Tusitala Marsh","Fast Talking PI"],["stories",1,"B1","Oscar Wilde","The Happy Prince"],["stories",2,"B1","O. Henry","The Gift of the Magi"],["stories",3,"B1","Beatrix Potter","The Tale of Peter Rabbit"],["stories",4,"B1","Saki","The Open Window"],["stories",5,"B1","Langston Hughes","Thank You, Ma'am"],["stories",6,"B1","Katherine Mansfield","The Doll's House"],["stories",7,"B1","Henry Lawson","The Drover's Wife"],["stories",8,"B2","Frank Sargeson","A Great Day"],["stories",9,"B2","Barry Crump","A Good Keen Man (selected extract)"],["stories",10,"B2","W. Somerset Maugham","The Verger"],["stories",11,"B2","Kate Chopin","The Story of an Hour"],["stories",12,"B2","Chinua Achebe","Dead Men's Path"],["stories",13,"B2","R. K. Narayan","An Astrologer's Day"],["stories",14,"B2","Shirley Jackson","The Lottery"],["stories",15,"B2","Alice Munro","Boys and Girls"],["stories",16,"B2","Patricia Grace","A Way of Talking"],["stories",17,"B2","Witi Ihimaera","The Whale"],["stories",18,"B2","Tim Winton","Neighbours"],["stories",19,"B2","Barbara Baynton","The Chosen Vessel"],["stories",20,"C1","Katherine Mansfield","The Garden Party"],["stories",21,"C1","James Joyce","Araby"],["stories",22,"C1","D. H. Lawrence","The Rocking-Horse Winner"],["stories",23,"C1","Jhumpa Lahiri","A Temporary Matter"],["stories",24,"C1","Nadine Gordimer","Once Upon a Time"],["stories",25,"C1","Jean Rhys","The Day They Burned the Books"],["stories",26,"C1","Chimamanda Ngozi Adichie","The Thing Around Your Neck"],["stories",27,"C1","Alice Munro","Runaway"],["stories",28,"C1","Janet Frame","The Reservoir"],["stories",29,"C1","Peter Carey","American Dreams"],["stories",30,"C1","Nam Le","Love and Honour and Pity and Pride and Compassion and Sacrifice"]];
+const literatureStorageKey='openpage-literature-course-progress-v1';
+function literatureCompleted(){
+ try{const saved=JSON.parse(localStorage.getItem(literatureStorageKey)||'[]');return Array.isArray(saved)?saved:[]}catch(e){return []}
+}
+function renderLiteraturePlanner(){
+ const target=document.getElementById('literatureChecklist');
+ if(!target)return;
+ const completed=literatureCompleted();
+ const type=document.getElementById('literatureType').value;
+ const level=document.getElementById('literatureLevel').value;
+ const filtered=literatureWorks.filter(w=>(type==='all'||w[0]===type)&&(level==='all'||w[2]===level));
+ const completedFiltered=filtered.filter(w=>completed.includes(w[0]+'-'+w[1])).length;
+ document.getElementById('literatureProgress').textContent=completedFiltered+' of '+filtered.length+' selected works completed · '+literatureWorks.filter(w=>completed.includes(w[0]+'-'+w[1])).length+' of 60 overall';
+ target.replaceChildren();
+ let lastGroup='';
+ filtered.forEach(w=>{
+  const key=w[0]+'-'+w[1],group=(w[0]==='poetry'?'Poetry':'Short Stories')+' · '+w[2];
+  if(group!==lastGroup){const h=document.createElement('h3');h.textContent=group;target.appendChild(h);lastGroup=group}
+  const label=document.createElement('label');label.style.cssText='display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer';
+  const input=document.createElement('input');input.type='checkbox';input.checked=completed.includes(key);input.style.cssText='width:19px;height:19px;flex-shrink:0;margin-top:3px';
+  const description=document.createElement('span');description.textContent=w[1]+'. '+w[3]+' — '+w[4];if(input.checked)description.style.textDecoration='line-through';
+  input.addEventListener('change',()=>{
+   const next=literatureCompleted().filter(v=>v!==key);
+   if(input.checked)next.push(key);
+   try{localStorage.setItem(literatureStorageKey,JSON.stringify(next))}catch(e){document.getElementById('literatureProgress').textContent='Unable to save checklist in this browser.';return}
+   renderLiteraturePlanner();
+  });
+  label.append(input,description);target.appendChild(label);
+ });
+}
+document.getElementById('literatureType').addEventListener('change',renderLiteraturePlanner);
+document.getElementById('literatureLevel').addEventListener('change',renderLiteraturePlanner);
+renderLiteraturePlanner();
 function organiseOptionalLessonFields(){
  const editor=document.getElementById('editor');
  if(!editor||document.getElementById('optionalLessonSettings'))return;
